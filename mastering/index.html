@@ -374,6 +374,14 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--ink-soft);mar
   *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}
   html{scroll-behavior:auto}
 }
+
+/* ── リアルタイム試聴・書き出し結果 ── */
+.player canvas{width:100%;height:110px;display:block;border-radius:8px;margin-top:14px;background:var(--paper);cursor:pointer}
+.live-info{margin-top:12px;font-size:12px;font-weight:700;color:var(--mute);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.live-info .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+#result.stale .stats,#result.stale .dl-row,#result.stale .dl-note,#result.stale .result-head{opacity:.4;transition:opacity .3s ease}
+.stale-note{display:none;margin-top:14px;background:#fbf3e8;border:1px solid #e9d2b0;border-radius:12px;padding:11px 16px;font-size:12.5px;color:#7a5a2a;font-weight:600}
+#result.stale .stale-note{display:block;animation:riseIn .35s var(--ease)}
 </style>
 </head>
 <body>
@@ -463,8 +471,26 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--ink-soft);mar
       </div>
       <div class="analysis-note" id="ajNote">—</div>
     </div>
+    <!-- ⑦ 試聴プレーヤー（リアルタイム切替・新フローで前倒し） -->
+    <div class="sec-label"><span class="step">1</span>聴き比べる — 下の設定は再生中でも即反映</div>
+    <div class="player" id="playerCard">
+      <div class="player-row">
+        <button type="button" class="play-btn" id="playBtn" aria-label="再生">
+          <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
+        </button>
+        <div class="ab-switch" role="group" aria-label="処理前後の切替">
+          <button type="button" id="abBefore">処理前</button>
+          <button type="button" id="abAfter" class="on">処理後</button>
+        </div>
+        <span class="p-time" id="pTime">0:00 / 0:00</span>
+      </div>
+      <canvas id="pvWave" width="1400" height="220"></canvas>
+      <input type="range" class="seek" id="seek" min="0" max="1000" value="0" aria-label="再生位置">
+      <div class="live-info"><span class="dot"></span><span id="liveInfo">—</span></div>
+    </div>
+
     <!-- ⑤ プリセット -->
-    <div class="sec-label"><span class="step">1</span>仕上がりのイメージを選ぶ</div>
+    <div class="sec-label"><span class="step">2</span>仕上がりのイメージを選ぶ</div>
     <div class="presets" role="radiogroup" aria-label="マスタリングプリセット">
       <div class="preset">
         <input type="radio" name="preset" id="pr-standard" value="standard" checked>
@@ -489,7 +515,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--ink-soft);mar
     </div>
 
     <!-- 適用強度スライダー -->
-    <div class="sec-label"><span class="step">2</span>適用の強さ</div>
+    <div class="sec-label"><span class="step">3</span>適用の強さ</div>
     <div class="intensity" id="intensityBox">
       <div class="row"><span class="t">適用強度</span><span class="val" id="intVal">50%</span></div>
       <input type="range" id="intensity" min="0" max="100" value="50" step="1" aria-label="適用強度">
@@ -521,37 +547,20 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--ink-soft);mar
       </div></div>
     </details>
 
-    <!-- ⑥ 実行ボタン -->
+    <!-- ⑥ 書き出しボタン -->
     <div class="run-area">
-      <button type="button" class="run-btn" id="runBtn">この設定でマスタリング</button>
+      <button type="button" class="run-btn" id="runBtn">この設定で書き出す</button>
       <div class="proc" id="proc">
         <div class="pbar"><span id="procBar"></span></div>
         <div class="pbar-label"><span id="procLabel">ブラウザ内で処理中…</span></div>
       </div>
     </div>
 
-    <!-- ⑦⑧ 結果エリア -->
+    <!-- ⑧ 書き出し結果 -->
     <div class="result" id="result">
       <div class="r-item result-head">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-        マスタリング完了 — 聴き比べてみましょう
-      </div>
-      <div class="r-item player">
-        <div class="player-row">
-          <button type="button" class="play-btn" id="playBtn" aria-label="再生">
-            <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
-          </button>
-          <div class="ab-switch" role="group" aria-label="ビフォー・アフター切替">
-            <button type="button" id="abBefore">処理前</button>
-            <button type="button" id="abAfter" class="on">処理後</button>
-          </div>
-          <span class="p-time" id="pTime">0:00 / 0:00</span>
-        </div>
-        <input type="range" class="seek" id="seek" min="0" max="1000" value="0" aria-label="再生位置">
-      </div>
-      <div class="r-item wave-card">
-        <canvas id="resWave" width="1400" height="240"></canvas>
-        <div class="wave-legend"><i>処理前</i><i class="after">処理後</i></div>
+        書き出し完了 — この内容で保存できます
       </div>
       <div class="r-item stats">
         <div class="stat"><div class="l">ラウドネス</div><div class="v"><span id="stLufsBefore">—</span><span class="arrow">→</span><span id="stLufsAfter">—</span> <small>LUFS</small></div></div>
@@ -564,10 +573,10 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--ink-soft);mar
             WAVで保存（推奨）
           </button>
           <button type="button" class="dl-btn ghost" id="dlMp3">MP3で保存（192kbps）</button>
-          <button type="button" class="dl-btn ghost" id="reBtn">別プリセットで再処理</button>
         </div>
         <p class="dl-note">WAVは16bit・無劣化書き出し。MP3は軽い代わりに非可逆圧縮です。</p>
       </div>
+      <p class="stale-note" id="staleNote">設定が変更されています。上の保存内容は変更前のものです。最新の設定で保存するには、もう一度「この設定で書き出す」を押してください。</p>
     </div>
 
     <!-- ⑨ 回遊導線（完了後のみ） -->
@@ -588,8 +597,8 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--ink-soft);mar
     <p>本ツールは、SunoなどのAI音楽サービスで作成した楽曲を、YouTubeやSpotifyといった配信プラットフォームの基準に合った音圧（ラウドネス）へ自動調整する無料のマスタリングツールです。専門知識や数値の入力は一切不要で、操作は次の3ステップだけです。</p>
     <ol class="steps">
       <li><b>曲をドロップする。</b>ページ上部の枠に音声ファイル（MP3 / WAV / FLAC / OGG）をドラッグ＆ドロップするか、「ファイルを選ぶ」ボタンから選択します。スマートフォンではボタンをタップしてファイルを選んでください。読み込むとすぐに解析が始まり、曲の現在のラウドネスとピーク値が表示されます。</li>
-      <li><b>仕上がりのイメージを選ぶ。</b>「配信基準」「迫力重視」「クリア・ボーカル重視」「あたたかめ」「そのまま整える」の5つから、曲に合うものを1つ選びます。迷ったら、初期選択のままの「配信基準」で問題ありません。かかり具合は下の適用強度スライダーで調整できます（まずは標準の50%がおすすめです）。</li>
-      <li><b>ボタンを押して、聴き比べて保存。</b>「この設定でマスタリング」を押すと数秒〜十数秒で処理が完了し、処理前と処理後をワンタップで聴き比べられるプレーヤーが表示されます。納得できたらWAV（推奨）またはMP3でダウンロード。気に入らなければ別のプリセットを選び直して、すぐに再処理できます。</li>
+      <li><b>聴きながら仕上がりを選ぶ。</b>解析が終わると試聴画面に切り替わります。曲を再生しながら「配信基準」「迫力重視」「クリア・ボーカル重視」「あたたかめ」「そのまま整える」のボタンを切り替えると、その場で音が変わります。「処理前」ボタンを押せばいつでも元の音と聴き比べられ、適用強度スライダーの変化もリアルタイムに反映されます（まずは標準の50%がおすすめです）。</li>
+      <li><b>書き出して保存する。</b>好みの設定が決まったら「この設定で書き出す」を押します。数秒で正確な音圧合わせと音割れ防止リミッター（天井 -1 dBFS）を適用した完成ファイルができあがり、WAV（推奨）またはMP3でダウンロードできます。書き出し後に設定を変えた場合は、もう一度ボタンを押せば最新の設定で作り直せます。</li>
     </ol>
 
     <h2>LUFSとは？ なぜ「-14 LUFS」を目指すのか</h2>
@@ -626,6 +635,10 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--ink-soft);mar
       <details>
         <summary>「クリアさ強化」は何をしていますか？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
         <div class="a">高域にごく軽い倍音を加え、こもりの原因になりやすい中低域をわずかに整理し、ステレオの広がりを少し足す補正です。AI生成音源で失われた音そのものを復元する機能ではなく、あくまで聴感を整える補正である点は正直に明記しておきます。効き具合は強度スライダーに連動します。</div>
+      </details>
+      <details>
+        <summary>試聴の音と保存したファイルの音は同じですか？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <div class="a">音色（EQ・コンプレッサー・クリアさ強化）は、試聴も保存もまったく同じ処理を同じ数値で通るため同一です。全体音量の合わせ込みだけは、試聴ではリアルタイム再生用の近似計算（曲中で最も大きい部分を使った自動補正つき）のため、保存ファイルとわずかな差が出る場合があります。保存時には曲全体を測定し直して音圧を正確に目標へ合わせ、ピーク上限（-1 dBFS）も厳密に保証します。</div>
       </details>
       <details>
         <summary>Sunoで作った曲を商用利用できますか？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
@@ -761,9 +774,10 @@ async function loadFile(index){
       setAnalyzeProgress(15+frac*83);
       drawProgressWave($('anWave'),peaks,frac,'#2b2620');
     });
-    S.origLufs=res.lufs;S.origPeakDb=res.peakDb;S.origPeaks=res.peaks;
+    S.origLufs=res.lufs;S.origPeakDb=res.peakDb;S.origPeaks=res.peaks;S.loudStart=res.loudStart;
     setAnalyzeProgress(100);
     prepareAdjustScreen();
+    initLiveAudio();
     showScreen('adjust');
   }catch(err){
     S.buffer=null;
@@ -851,7 +865,16 @@ async function measureLoudness(buffer,onProgress){
     const mean2=finalArr.reduce((a,b)=>a+b,0)/finalArr.length;
     lufs=loud(mean2);
   }
-  return {lufs,peak,peakDb:lin2dB(peak),peaks};
+  // 最も音圧の高い8秒窓の開始位置（試聴キャリブレーション用）
+  let loudStart=0;
+  if(nSub>0){
+    const win=Math.min(nSub,80);
+    let sum=0;for(let j=0;j<win;j++)sum+=subEnergy[j];
+    let best=sum,bestJ=0;
+    for(let j=win;j<nSub;j++){sum+=subEnergy[j]-subEnergy[j-win];if(sum>best){best=sum;bestJ=j-win+1;}}
+    loudStart=bestJ*0.1;
+  }
+  return {lufs,peak,peakDb:lin2dB(peak),peaks,loudStart};
 }
 
 /* 解析中の進行波形描画 */
@@ -881,11 +904,13 @@ function prepareAdjustScreen(){
   let note;
   if(S.origLufs===-Infinity)note='無音に近いファイルのようです。';
   else if(d<-4)note='配信基準（-14 LUFS）よりかなり小さめです。マスタリングで大きく改善できます。';
-  else if(d<-1.5)note='配信基準（-14 LUFS)よりやや小さめです。整えるとちょうど良くなります。';
+  else if(d<-1.5)note='配信基準（-14 LUFS）よりやや小さめです。整えるとちょうど良くなります。';
   else if(d<=1.5)note='配信基準（-14 LUFS）にほぼ合っています。仕上げの微調整に。';
   else note='配信基準より大きめです。音割れを防ぎつつ整えるのがおすすめです。';
   $('ajNote').textContent=note;
-  hideResult();
+  hideExport();
+  buildWaveCache();
+  resetPlayerUI();
   renderQueue();
 }
 function renderQueue(){
@@ -901,31 +926,75 @@ function renderQueue(){
     q.appendChild(b);
   });
 }
-function hideResult(){
-  $('result').classList.remove('show');
+function hideExport(){
+  S.processed=null;
+  $('result').classList.remove('show','stale');
   $('nextTools').classList.remove('show');
-  stopPlayback();
 }
 $('backLink').addEventListener('click',e=>{e.preventDefault();stopPlayback();showScreen('upload');});
 
-/* ═══════════ ⑤ プリセット定義 ═══════════ */
+/* ═══════════ ⑤ プリセット定義と設定解決 ═══════════ */
 const PRESETS={
-  standard:{target:-14,eq:[],comp:null},
-  power:{target:-10,eq:[{type:'lowshelf',f:90,gain:3}],comp:{ratio:3,threshold:-18}},
-  clear:{target:-13,eq:[{type:'highshelf',f:8000,gain:2},{type:'peaking',f:3000,gain:1.5,q:1.1},{type:'highpass',f:30}],comp:{ratio:2,threshold:-20}},
-  warm:{target:-14,eq:[{type:'highshelf',f:10000,gain:-2},{type:'lowshelf',f:200,gain:2}],comp:{ratio:2,threshold:-20}},
-  safe:{target:null,eq:[],comp:null}
+  standard:{target:-14,comp:null},
+  power:{target:-10,comp:{ratio:3,threshold:-18}},
+  clear:{target:-13,comp:{ratio:2,threshold:-20}},
+  warm:{target:-14,comp:{ratio:2,threshold:-20}},
+  safe:{target:null,comp:null}
 };
 const CEILING_DB=-1.0;   // 安全弁: 常時 -1.0 dBFS（詳細設定でのみ変更可）
 const TARGET_FLOOR=-8;   // 安全弁: 目標LUFSはこれより大きくできない
 const EQ_BOOST_MAX=6;    // 安全弁: EQブースト上限 +6dB
+const EXCITER_CURVE=(()=>{
+  const c=new Float32Array(1024);
+  for(let i=0;i<1024;i++){const x=i/511.5-1;c[i]=Math.tanh(2.5*x)/Math.tanh(2.5);}
+  return c;
+})();
 
-/* UI: プリセット・スライダー・詳細設定 */
-function selectedPreset(){return document.querySelector('input[name=preset]:checked').value;}
+function selectedPreset(){const el=document.querySelector('input[name=preset]:checked');return el?el.value:'standard';}
+
+// 現在のUI状態 → 処理パラメータ一式（試聴と書き出しで共通の唯一の情報源）
+function resolveSettings(){
+  const presetKey=selectedPreset();
+  const intensity=+intEl.value;
+  const k=intensity/50;                            // 強度係数（50%=1.0, 100%=2.0）
+  const clarityOn=$('clarityToggle').checked;
+  let ceilDb=CEILING_DB;
+  const advCeil=parseFloat($('advCeil').value);
+  if(!isNaN(advCeil))ceilDb=clamp(advCeil,-3,-1);
+  let target=null;
+  if(presetKey!=='safe'){
+    const advL=parseFloat($('advLufs').value);
+    if(S.lastTouched==='manual'&&!isNaN(advL)){
+      target=clamp(advL,-24,TARGET_FLOOR);
+    }else{
+      // 0%=元のまま / 50%=標準 / 100%=標準+2LU（LU線形補間）
+      const std=PRESETS[presetKey].target,orig=(S.origLufs===-Infinity?std:S.origLufs);
+      target=intensity<=50?orig+(std-orig)*(intensity/50):std+2*(intensity-50)/50;
+      target=Math.min(target,TARGET_FLOOR);
+    }
+  }
+  const g=v=>clamp(v*k,-12,EQ_BOOST_MAX);
+  const eq={hp30:false,ls90:0,ls200:0,pk3k:0,hs8k:0,hs10k:0};
+  if(presetKey!=='safe'&&k>0){
+    if(presetKey==='power')eq.ls90=g(3);
+    else if(presetKey==='clear'){eq.hs8k=g(2);eq.pk3k=g(1.5);eq.hp30=true;}
+    else if(presetKey==='warm'){eq.hs10k=g(-2);eq.ls200=g(2);}
+  }
+  let comp=null;
+  const pc=PRESETS[presetKey].comp;
+  if(pc&&k>0)comp={ratio:clamp(1+(pc.ratio-1)*k,1,20),threshold:clamp(pc.threshold*k,-60,0)};
+  const clarityAmt=(clarityOn&&k>0)?Math.min(k,2):0;
+  return {presetKey,intensity,k,target,ceilDb,ceil:dB2lin(ceilDb),eq,comp,clarityAmt};
+}
+function settingsKey(s){return [s.presetKey,s.intensity,s.clarityAmt.toFixed(2),s.target===null?'n':s.target.toFixed(2),s.ceilDb].join('|');}
+function chainKey(s){return [s.presetKey,s.intensity,s.clarityAmt.toFixed(2)].join('|');}
+
+/* UI操作 → 即時反映 */
 document.querySelectorAll('input[name=preset]').forEach(r=>r.addEventListener('change',()=>{
   const safe=selectedPreset()==='safe';
   $('intensityBox').classList.toggle('disabled',safe);
   $('intensity').disabled=safe;
+  applyLiveParams();
 }));
 const intEl=$('intensity');
 function updateSliderUI(){
@@ -937,152 +1006,48 @@ intEl.addEventListener('input',()=>{
   if(Math.abs(v-50)<=3&&v!==50){intEl.value=50;v=50;}   // 中央スナップ（detent）
   S.lastTouched='slider';
   updateSliderUI();
+  applyLiveParams();
 });
 updateSliderUI();
-$('advLufs').addEventListener('input',()=>{S.lastTouched='manual';});
-$('advCeil').addEventListener('input',()=>{S.lastTouched='manual';});
+$('clarityToggle').addEventListener('change',applyLiveParams);
+$('advLufs').addEventListener('input',()=>{S.lastTouched='manual';applyLiveParams();});
+$('advCeil').addEventListener('input',()=>{S.lastTouched='manual';applyLiveParams();});
 
-/* ═══════════ マスタリング実行 ═══════════ */
-$('runBtn').addEventListener('click',runMastering);
-$('reBtn').addEventListener('click',()=>{
-  stopPlayback();
-  document.querySelector('.presets').scrollIntoView({behavior:'smooth',block:'center'});
-});
-function setProcProgress(p,label){
-  $('procBar').style.width=clamp(p,0,100)+'%';
-  if(label)$('procLabel').textContent=label;
-}
-
-async function runMastering(){
-  if(!S.buffer||S.processing)return;
-  S.processing=true;
-  const runBtn=$('runBtn');
-  runBtn.disabled=true;
-  hideResult();
-  $('proc').classList.add('show');
-  setProcProgress(4,'ブラウザ内で処理中…');
-  try{
-    const presetKey=selectedPreset(),preset=PRESETS[presetKey];
-    const intensity=+intEl.value;
-    const k=intensity/50;                       // 強度係数（50%=1.0, 100%=2.0）
-    const clarity=$('clarityToggle').checked;
-    const buf=S.buffer,fs=buf.sampleRate,nch=buf.numberOfChannels,len=buf.length;
-
-    // シーリング（詳細設定があれば優先、常に-1.0dBFS以下）
-    let ceilDb=CEILING_DB;
-    const advCeil=parseFloat($('advCeil').value);
-    if(!isNaN(advCeil))ceilDb=clamp(advCeil,-3,-1);
-    const ceil=dB2lin(ceilDb);
-
-    // 目標LUFS（後から触った方を優先）
-    let target=null;
-    if(presetKey!=='safe'){
-      const advL=parseFloat($('advLufs').value);
-      if(S.lastTouched==='manual'&&!isNaN(advL)){
-        target=clamp(advL,-24,TARGET_FLOOR);
-      }else{
-        // 0%=元のまま / 50%=標準 / 100%=標準+2LU（LU線形補間）
-        const std=preset.target,orig=(S.origLufs===-Infinity?std:S.origLufs);
-        target=intensity<=50?orig+(std-orig)*(intensity/50):std+2*(intensity-50)/50;
-        target=Math.min(target,TARGET_FLOOR);
-      }
-    }
-
-    /* 1) OfflineAudioContextでEQ・コンプ・クリアさ強化を適用 */
-    const octx=new OfflineAudioContext(nch,len,fs);
-    const src=octx.createBufferSource();src.buffer=buf;
-    let node=src;
-    if(presetKey!=='safe'&&k>0){
-      for(const e of preset.eq){
-        const f=octx.createBiquadFilter();
-        f.type=e.type;f.frequency.value=e.f;
-        if(e.q)f.Q.value=e.q;
-        if(e.type==='highpass'){f.Q.value=0.707;}
-        else f.gain.value=clamp(e.gain*k,-12,EQ_BOOST_MAX);
-        node.connect(f);node=f;
-      }
-      if(preset.comp){
-        const c=octx.createDynamicsCompressor();
-        c.ratio.value=clamp(1+(preset.comp.ratio-1)*k,1,20);
-        c.threshold.value=clamp(preset.comp.threshold*k,-60,0);
-        c.knee.value=6;c.attack.value=0.01;c.release.value=0.25;
-        node.connect(c);node=c;
-      }
-    }
-    if(clarity&&k>0)node=buildClarityChain(octx,node,Math.min(k,2),nch,buf);
-    node.connect(octx.destination);
-    src.start(0);
-    // レンダリング中の擬似進行（実処理を遅らせない）
-    let fake=8;const tickId=setInterval(()=>{fake=Math.min(38,fake+2);setProcProgress(fake);},180);
-    const rendered=await octx.startRendering();
-    clearInterval(tickId);
-    setProcProgress(40,'ラウドネスを測定中…');
-
-    /* 2) 処理後ラウドネス測定 → ゲイン算出 */
-    const chans=[];for(let c=0;c<nch;c++)chans.push(rendered.getChannelData(c));
-    let gain;
-    if(target===null){
-      // そのまま整える: ピークが天井を超える場合のみ下げる
-      let p=0;for(const ch of chans){for(let i=0;i<len;i+=4){const a=Math.abs(ch[i]);if(a>p)p=a;}}
-      // 粗いスキャンの後、超えていそうなら精密スキャン
-      if(p>ceil*0.9){p=0;for(const ch of chans){for(let i=0;i<len;i++){const a=Math.abs(ch[i]);if(a>p)p=a;}}}
-      gain=p>ceil?ceil/p:1;
-      setProcProgress(66);
-    }else{
-      const m=await measureLoudness(rendered,f=>setProcProgress(40+f*26));
-      gain=(m.lufs===-Infinity)?1:dB2lin(target-m.lufs);
-    }
-
-    /* 3) ゲイン適用 + ルックアヘッドリミッター（±1LU補正つき） */
-    let out=await applyGainAndLimit(chans,fs,gain,ceil,f=>setProcProgress(66+f*22));
-    let final=await measureLoudness(makeBuffer(out,fs,len),f=>setProcProgress(88+f*8));
-    if(target!==null&&final.lufs!==-Infinity&&Math.abs(final.lufs-target)>0.4){
-      // リミッターで削れた分を1回だけ補正
-      gain*=dB2lin(clamp(target-final.lufs,-3,3));
-      out=await applyGainAndLimit(chans,fs,gain,ceil,f=>setProcProgress(88+f*6));
-      final=await measureLoudness(makeBuffer(out,fs,len),f=>setProcProgress(94+f*4));
-    }
-
-    /* 4) 結果を保存して表示 */
-    const pbuf=makeBuffer(out,fs,len);
-    S.processed={
-      buffer:pbuf,lufs:final.lufs,peakDb:final.peakDb,peaks:final.peaks,
-      presetKey,intensity
-    };
-    setProcProgress(100,'完了');
-    showResultArea();
-  }catch(err){
-    console.error(err);
-    alert('処理中にエラーが発生しました。ページを再読み込みしてお試しください。');
-  }finally{
-    S.processing=false;
-    runBtn.disabled=false;
-    setTimeout(()=>$('proc').classList.remove('show'),600);
+/* ═══════════ オフライン処理チェーン（書き出し・キャリブレーション共通） ═══════════ */
+function buildOfflineChain(octx,src,s,nch,srcBuf){
+  let node=src;
+  const mk=(type,f,gain,q)=>{
+    const b=octx.createBiquadFilter();
+    b.type=type;b.frequency.value=f;b.Q.value=(q!==undefined?q:0.707);
+    if(gain!==undefined)b.gain.value=gain;
+    node.connect(b);node=b;
+  };
+  if(s.eq.hp30)mk('highpass',30);
+  if(s.eq.ls90)mk('lowshelf',90,s.eq.ls90);
+  if(s.eq.ls200)mk('lowshelf',200,s.eq.ls200);
+  if(s.eq.pk3k)mk('peaking',3000,s.eq.pk3k,1.1);
+  if(s.eq.hs8k)mk('highshelf',8000,s.eq.hs8k);
+  if(s.eq.hs10k)mk('highshelf',10000,s.eq.hs10k);
+  if(s.comp){
+    const c=octx.createDynamicsCompressor();
+    c.ratio.value=s.comp.ratio;c.threshold.value=s.comp.threshold;
+    c.knee.value=6;c.attack.value=0.01;c.release.value=0.25;
+    node.connect(c);node=c;
   }
+  if(s.clarityAmt>0)node=buildClarityChain(octx,node,s.clarityAmt,nch,srcBuf);
+  return node;
 }
-function makeBuffer(chans,fs,len){
-  const b=audioCtx().createBuffer(chans.length,len,fs);
-  for(let c=0;c<chans.length;c++)b.copyToChannel(chans[c],c);
-  return b;
-}
-
-/* ═══════════ C-2. クリアさ強化チェーン ═══════════ */
+/* C-2. クリアさ強化チェーン（オフライン用） */
 function buildClarityChain(octx,input,amt,nch,buf){
-  // ハーモニックエキサイター: 3kHz以上を分岐→軽い倍音付加→控えめにミックス
   const sum=octx.createGain();sum.gain.value=1;
   input.connect(sum);
   const hp=octx.createBiquadFilter();hp.type='highpass';hp.frequency.value=3000;hp.Q.value=0.707;
-  const shaper=octx.createWaveShaper();
-  const curve=new Float32Array(1024);
-  for(let i=0;i<1024;i++){const x=i/511.5-1;curve[i]=Math.tanh(2.5*x)/Math.tanh(2.5);}
-  shaper.curve=curve;shaper.oversample='2x';
+  const shaper=octx.createWaveShaper();shaper.curve=EXCITER_CURVE;shaper.oversample='2x';
   const exGain=octx.createGain();exGain.gain.value=Math.min(0.09*amt,0.18);  // 歪みが聴こえる手前で上限固定
   input.connect(hp);hp.connect(shaper);shaper.connect(exGain);exGain.connect(sum);
-  // 濁り取りEQ: 250Hz付近を軽く削る（Q広め）
   const mud=octx.createBiquadFilter();mud.type='peaking';mud.frequency.value=250;mud.Q.value=0.7;
   mud.gain.value=-2*amt;
   sum.connect(mud);
-  // ステレオ幅: M/Sでサイド +1.5dB（モノラルはスキップ）
   if(nch===2&&!isEffectivelyMono(buf))return buildWidener(octx,mud,dB2lin(Math.min(1.5*amt,3)));
   return mud;
 }
@@ -1110,7 +1075,313 @@ function buildWidener(octx,input,sideGain){
   return merge;
 }
 
-/* ═══════════ ルックアヘッド型ピークリミッター ═══════════ */
+/* ═══════════ リアルタイム試聴グラフ ═══════════ */
+const live={nodes:null,all:null,workletReady:false,workletFailed:false,calCache:{},calSeq:0,segBuf:null,segOrigLufs:null};
+
+// ルックアヘッドリミッター（AudioWorklet版・書き出し用JS実装と同一アルゴリズム）
+const LIMITER_WORKLET=[
+'class LookaheadLimiter extends AudioWorkletProcessor{',
+'  static get parameterDescriptors(){return[{name:"ceiling",defaultValue:0.8913,minValue:0.05,maxValue:1,automationRate:"k-rate"}];}',
+'  constructor(){',
+'    super();',
+'    this.look=Math.max(1,Math.round(sampleRate*0.005));',
+'    this.atk=Math.exp(-1/(sampleRate*0.0025));',
+'    this.rel=Math.exp(-1/(sampleRate*0.08));',
+'    this.size=this.look+192;',
+'    this.ring=null;',
+'    this.pk=new Float32Array(this.size);',
+'    this.dq=new Float64Array(this.size+8);',
+'    this.dh=0;this.dt=0;this.n=0;this.env=1;',
+'  }',
+'  process(inputs,outputs,params){',
+'    const inp=inputs[0],out=outputs[0];',
+'    if(!inp||inp.length===0||!inp[0])return true;',
+'    const nch=inp.length,len=inp[0].length;',
+'    if(!this.ring||this.ring.length!==nch){',
+'      this.ring=[];for(let c=0;c<nch;c++)this.ring.push(new Float32Array(this.size));',
+'      this.dh=this.dt=0;this.n=0;this.env=1;',
+'    }',
+'    const ceil=params.ceiling[0],margin=ceil*0.985,D=this.dq.length;',
+'    for(let i=0;i<len;i++){',
+'      const wi=this.n%this.size;',
+'      let p=0;',
+'      for(let c=0;c<nch;c++){const v=inp[c][i];this.ring[c][wi]=v;const a=v<0?-v:v;if(a>p)p=a;}',
+'      this.pk[wi]=p;',
+'      while(this.dt>this.dh&&this.pk[this.dq[(this.dt-1)%D]%this.size]<=p)this.dt--;',
+'      this.dq[this.dt%D]=this.n;this.dt++;',
+'      const m=this.n-this.look;',
+'      if(m>=0){',
+'        while(this.dt>this.dh&&this.dq[this.dh%D]<m)this.dh++;',
+'        const wmax=this.pk[this.dq[this.dh%D]%this.size];',
+'        const gt=wmax>margin?margin/wmax:1;',
+'        this.env=gt<this.env?this.atk*this.env+(1-this.atk)*gt:this.rel*this.env+(1-this.rel)*gt;',
+'        const ri=m%this.size;',
+'        for(let c=0;c<nch;c++){',
+'          let v=this.ring[c][ri]*this.env;',
+'          if(v>ceil)v=ceil;else if(v<-ceil)v=-ceil;',
+'          if(out[c])out[c][i]=v;',
+'        }',
+'      }else{',
+'        for(let c=0;c<nch;c++)if(out[c])out[c][i]=0;',
+'      }',
+'      this.n++;',
+'    }',
+'    return true;',
+'  }',
+'}',
+'registerProcessor("lookahead-limiter",LookaheadLimiter);'
+].join('\n');
+
+async function ensureWorklet(){
+  if(live.workletReady)return true;
+  if(live.workletFailed)return false;
+  const ctx=audioCtx();
+  if(!ctx.audioWorklet){live.workletFailed=true;return false;}
+  try{
+    const url=URL.createObjectURL(new Blob([LIMITER_WORKLET],{type:'application/javascript'}));
+    await ctx.audioWorklet.addModule(url);
+    URL.revokeObjectURL(url);
+    live.workletReady=true;return true;
+  }catch(e){live.workletFailed=true;return false;}
+}
+// フォールバック用ソフトクリップ（Worklet非対応ブラウザのみ）
+function clipCurve(ceil){
+  const N=2048,c=new Float32Array(N),a=0.6*ceil;
+  for(let i=0;i<N;i++){
+    const x=i/(N-1)*2-1,ax=Math.abs(x);
+    const y=ax<=a?ax:a+(ceil-a)*Math.tanh((ax-a)/(ceil-a));
+    c[i]=(x<0?-1:1)*Math.min(y,ceil);
+  }
+  return c;
+}
+
+function teardownLive(){
+  if(live.all){for(const x of live.all){try{x.disconnect();}catch(e){}}}
+  live.nodes=null;live.all=null;
+  live.calCache={};live.segBuf=null;live.segOrigLufs=null;live.calSeq++;
+}
+
+async function initLiveAudio(){
+  const buf=S.buffer;
+  if(!buf)return;
+  stopPlayback();
+  teardownLive();
+  const ctx=audioCtx(),nch=buf.numberOfChannels;
+  const hasWorklet=await ensureWorklet();
+  if(S.buffer!==buf)return;  // 待機中に別ファイルへ切替済み
+  const n={},all=[];
+  const G=v=>{const g=ctx.createGain();g.gain.value=v;all.push(g);return g;};
+  const BQ=(type,f,q)=>{const b=ctx.createBiquadFilter();b.type=type;b.frequency.value=f;b.Q.value=q||0.707;b.gain.value=0;all.push(b);return b;};
+  n.input=G(1);
+  // ── wet: EQ群（未使用バンドはニュートラル） ──
+  n.hp30=BQ('highpass',5);
+  n.ls90=BQ('lowshelf',90);n.ls200=BQ('lowshelf',200);
+  n.pk3k=BQ('peaking',3000,1.1);n.hs8k=BQ('highshelf',8000);n.hs10k=BQ('highshelf',10000);
+  n.comp=ctx.createDynamicsCompressor();all.push(n.comp);
+  n.comp.ratio.value=1;n.comp.threshold.value=0;n.comp.knee.value=6;n.comp.attack.value=0.01;n.comp.release.value=0.25;
+  // ── クリアさ強化（常設・OFF時はニュートラル） ──
+  n.claritySum=G(1);
+  n.exHp=BQ('highpass',3000);
+  n.exShaper=ctx.createWaveShaper();n.exShaper.curve=EXCITER_CURVE;n.exShaper.oversample='2x';all.push(n.exShaper);
+  n.exGain=G(0);
+  n.mud=BQ('peaking',250,0.7);
+  n.makeup=G(1);
+  // ── リミッター ──
+  if(hasWorklet){
+    n.limiter=new AudioWorkletNode(ctx,'lookahead-limiter',{channelCount:nch,channelCountMode:'explicit',channelInterpretation:'discrete',outputChannelCount:[nch]});
+    all.push(n.limiter);
+    n.limiterCeil=n.limiter.parameters.get('ceiling');
+  }else{
+    n.limiter=ctx.createWaveShaper();all.push(n.limiter);
+    n.limiter.curve=clipCurve(dB2lin(CEILING_DB));n.limiter.oversample='2x';
+    n.fallbackCeilDb=CEILING_DB;
+  }
+  n.wet=G(1);
+  // ── 配線 ──
+  const chain=[n.input,n.hp30,n.ls90,n.ls200,n.pk3k,n.hs8k,n.hs10k,n.comp];
+  for(let i=0;i<chain.length-1;i++)chain[i].connect(chain[i+1]);
+  n.comp.connect(n.claritySum);
+  n.comp.connect(n.exHp);n.exHp.connect(n.exShaper);n.exShaper.connect(n.exGain);n.exGain.connect(n.claritySum);
+  n.claritySum.connect(n.mud);
+  let tail=n.mud;
+  if(nch===2){
+    // M/Sステレオ幅（ニュートラル時はサイド係数1で完全に素通し）
+    const split=ctx.createChannelSplitter(2),merge=ctx.createChannelMerger(2);all.push(split,merge);
+    tail.connect(split);
+    const mL=G(0.5),mR=G(0.5),sL=G(0.5),sR=G(-0.5);
+    split.connect(mL,0);split.connect(mR,1);split.connect(sL,0);split.connect(sR,1);
+    const m=G(1);n.sideGain=G(1);
+    mL.connect(m);mR.connect(m);sL.connect(n.sideGain);sR.connect(n.sideGain);
+    const sInv=G(-1);n.sideGain.connect(sInv);
+    m.connect(merge,0,0);n.sideGain.connect(merge,0,0);
+    m.connect(merge,0,1);sInv.connect(merge,0,1);
+    tail=merge;
+  }
+  tail.connect(n.makeup);n.makeup.connect(n.limiter);n.limiter.connect(n.wet);n.wet.connect(ctx.destination);
+  // ── dry（処理前）: Workletの5ms遅延と揃える ──
+  n.dryDelay=ctx.createDelay(0.05);all.push(n.dryDelay);
+  n.dryDelay.delayTime.value=hasWorklet?Math.round(ctx.sampleRate*0.005)/ctx.sampleRate:0;
+  n.dry=G(0);
+  n.input.connect(n.dryDelay);n.dryDelay.connect(n.dry);n.dry.connect(ctx.destination);
+  live.nodes=n;live.all=all;
+  applyLiveParams();
+  applyABMode(true);
+}
+
+/* 設定変更を試聴グラフへ即時反映 */
+function applyLiveParams(){
+  if(!live.nodes||!S.buffer)return;
+  const s=resolveSettings(),n=live.nodes,t=audioCtx().currentTime,T=0.03;
+  const set=(p,v)=>{p.setTargetAtTime(v,t,T);};
+  set(n.hp30.frequency,s.eq.hp30?30:5);
+  set(n.ls90.gain,s.eq.ls90);set(n.ls200.gain,s.eq.ls200);
+  set(n.pk3k.gain,s.eq.pk3k);set(n.hs8k.gain,s.eq.hs8k);set(n.hs10k.gain,s.eq.hs10k);
+  set(n.comp.ratio,s.comp?s.comp.ratio:1);
+  set(n.comp.threshold,s.comp?s.comp.threshold:0);
+  set(n.exGain.gain,Math.min(0.09*s.clarityAmt,0.18));
+  set(n.mud.gain,-2*s.clarityAmt);
+  if(n.sideGain)set(n.sideGain.gain,s.clarityAmt>0?dB2lin(Math.min(1.5*s.clarityAmt,3)):1);
+  if(n.limiterCeil)set(n.limiterCeil,s.ceil);
+  else if(n.fallbackCeilDb!==undefined&&n.fallbackCeilDb!==s.ceilDb){n.limiter.curve=clipCurve(s.ceil);n.fallbackCeilDb=s.ceilDb;}
+  set(n.makeup.gain,dB2lin(estimateMakeupDb(s)));
+  updateLiveInfo(s);
+  scheduleCalibration(s);
+  markExportStale();
+}
+function estimateMakeupDb(s){
+  if(s.target===null)return S.origPeakDb>s.ceilDb?s.ceilDb-S.origPeakDb:0;
+  if(S.origLufs===-Infinity)return 0;
+  const d=live.calCache[chainKey(s)];
+  const base=d!==undefined?S.origLufs+d:S.origLufs;  // キャリブ済みなら処理後の実測ベース
+  return clamp(s.target-base,-40,40);
+}
+function updateLiveInfo(s){
+  $('liveInfo').textContent=s.target===null
+    ?'音はそのまま・音割れ防止のみ（ピーク上限 '+fmt1(s.ceilDb)+' dBFS）'
+    :'目標音圧 '+fmt1(s.target)+' LUFS ／ ピーク上限 '+fmt1(s.ceilDb)+' dBFS（試聴は近似・保存時に精密調整）';
+}
+
+/* 音量キャリブレーション: 曲中で最も大きい8秒をオフラインで通し、チェーンによる音圧変化を実測 */
+let calTimer=0;
+function scheduleCalibration(s){
+  if(s.target===null||!S.buffer)return;
+  if(live.calCache[chainKey(s)]!==undefined)return;
+  clearTimeout(calTimer);
+  calTimer=setTimeout(()=>{runCalibration();},250);
+}
+async function runCalibration(){
+  const buf=S.buffer;
+  if(!buf||!live.nodes)return;
+  const s=resolveSettings(),ck=chainKey(s);
+  if(s.target===null||live.calCache[ck]!==undefined)return;
+  const seq=++live.calSeq;
+  try{
+    const seg=getSegmentBuffer();
+    if(live.segOrigLufs===null)live.segOrigLufs=(await measureLoudness(seg)).lufs;
+    const octx=new OfflineAudioContext(seg.numberOfChannels,seg.length,seg.sampleRate);
+    const src=octx.createBufferSource();src.buffer=seg;
+    buildOfflineChain(octx,src,s,seg.numberOfChannels,seg).connect(octx.destination);
+    src.start(0);
+    const rendered=await octx.startRendering();
+    const l=(await measureLoudness(rendered)).lufs;
+    if(seq!==live.calSeq||S.buffer!==buf)return;
+    if(l===-Infinity||live.segOrigLufs===-Infinity)return;
+    live.calCache[ck]=l-live.segOrigLufs;
+    // 現在の設定がまだ同じチェーンなら音量をなめらかに補正
+    const cur=resolveSettings();
+    if(chainKey(cur)===ck&&cur.target!==null&&live.nodes)
+      live.nodes.makeup.gain.setTargetAtTime(dB2lin(estimateMakeupDb(cur)),audioCtx().currentTime,0.15);
+  }catch(e){}
+}
+function getSegmentBuffer(){
+  if(live.segBuf)return live.segBuf;
+  const buf=S.buffer,fs=buf.sampleRate;
+  const segLen=Math.min(buf.length,Math.round(fs*8));
+  const start=clamp(Math.round((S.loudStart||0)*fs),0,buf.length-segLen);
+  const seg=audioCtx().createBuffer(buf.numberOfChannels,segLen,fs);
+  for(let c=0;c<buf.numberOfChannels;c++)seg.copyToChannel(buf.getChannelData(c).subarray(start,start+segLen),c);
+  live.segBuf=seg;
+  return seg;
+}
+function markExportStale(){
+  if(!S.processed)return;
+  const r=$('result');
+  if(!r.classList.contains('show'))return;
+  r.classList.toggle('stale',S.processed.key!==settingsKey(resolveSettings()));
+}
+
+/* ═══════════ 書き出し（保存時のみ精密処理） ═══════════ */
+$('runBtn').addEventListener('click',exportMastering);
+function setProcProgress(p,label){
+  $('procBar').style.width=clamp(p,0,100)+'%';
+  if(label)$('procLabel').textContent=label;
+}
+async function exportMastering(){
+  if(!S.buffer||S.processing)return;
+  S.processing=true;
+  $('runBtn').disabled=true;
+  $('proc').classList.add('show');
+  setProcProgress(4,'ブラウザ内で処理中…');
+  try{
+    const s=resolveSettings();
+    const buf=S.buffer,fs=buf.sampleRate,nch=buf.numberOfChannels,len=buf.length;
+
+    /* 1) EQ・コンプ・クリアさ強化をオフラインで適用 */
+    const octx=new OfflineAudioContext(nch,len,fs);
+    const src=octx.createBufferSource();src.buffer=buf;
+    buildOfflineChain(octx,src,s,nch,buf).connect(octx.destination);
+    src.start(0);
+    let fake=8;const tickId=setInterval(()=>{fake=Math.min(38,fake+2);setProcProgress(fake);},180);
+    const rendered=await octx.startRendering();
+    clearInterval(tickId);
+    setProcProgress(40,'ラウドネスを測定中…');
+
+    /* 2) 処理後ラウドネス測定 → ゲイン算出 */
+    const chans=[];for(let c=0;c<nch;c++)chans.push(rendered.getChannelData(c));
+    let gain;
+    if(s.target===null){
+      // そのまま整える: ピークが天井を超える場合のみ下げる
+      let p=0;for(const ch of chans){for(let i=0;i<len;i+=4){const a=Math.abs(ch[i]);if(a>p)p=a;}}
+      if(p>s.ceil*0.9){p=0;for(const ch of chans){for(let i=0;i<len;i++){const a=Math.abs(ch[i]);if(a>p)p=a;}}}
+      gain=p>s.ceil?s.ceil/p:1;
+      setProcProgress(66);
+    }else{
+      const m=await measureLoudness(rendered,f=>setProcProgress(40+f*26));
+      gain=(m.lufs===-Infinity)?1:dB2lin(s.target-m.lufs);
+    }
+
+    /* 3) ゲイン適用 + ルックアヘッドリミッター（±1LU補正つき） */
+    let out=await applyGainAndLimit(chans,fs,gain,s.ceil,f=>setProcProgress(66+f*22));
+    let final=await measureLoudness(makeBuffer(out,fs,len),f=>setProcProgress(88+f*8));
+    if(s.target!==null&&final.lufs!==-Infinity&&Math.abs(final.lufs-s.target)>0.4){
+      gain*=dB2lin(clamp(s.target-final.lufs,-3,3));
+      out=await applyGainAndLimit(chans,fs,gain,s.ceil,f=>setProcProgress(88+f*6));
+      final=await measureLoudness(makeBuffer(out,fs,len),f=>setProcProgress(94+f*4));
+    }
+
+    /* 4) 結果を保存して表示 */
+    S.processed={
+      buffer:makeBuffer(out,fs,len),lufs:final.lufs,peakDb:final.peakDb,
+      key:settingsKey(s)
+    };
+    setProcProgress(100,'完了');
+    showExportResult();
+  }catch(err){
+    console.error(err);
+    alert('処理中にエラーが発生しました。ページを再読み込みしてお試しください。');
+  }finally{
+    S.processing=false;
+    $('runBtn').disabled=false;
+    setTimeout(()=>$('proc').classList.remove('show'),600);
+  }
+}
+function makeBuffer(chans,fs,len){
+  const b=audioCtx().createBuffer(chans.length,len,fs);
+  for(let c=0;c<chans.length;c++)b.copyToChannel(chans[c],c);
+  return b;
+}
+
+/* ═══════════ ルックアヘッド型ピークリミッター（書き出し用・厳密） ═══════════ */
 // lookahead 5ms / release 80ms / シーリング保証（最終ハードクリップつき）
 async function applyGainAndLimit(srcChans,fs,gain,ceil,onProgress){
   const len=srcChans[0].length,nch=srcChans.length;
@@ -1118,10 +1389,8 @@ async function applyGainAndLimit(srcChans,fs,gain,ceil,onProgress){
   const atk=Math.exp(-1/(fs*0.0025)),rel=Math.exp(-1/(fs*0.08));
   const margin=ceil*0.985;                       // トゥルーピーク近似の安全マージン
   const out=[];for(let c=0;c<nch;c++)out.push(new Float32Array(len));
-  // チャンネル間最大絶対値（ゲイン適用後）
   const dq=new Int32Array(len+1);let head=0,tail=0; // 単調減少デック（indexを保持）
   const pk=i=>{let m=0;for(let c=0;c<nch;c++){const a=Math.abs(srcChans[c][i]*gain);if(a>m)m=a;}return m;};
-  // 事前にlookahead分を投入
   const pkCache=new Float32Array(len);
   let env=1;
   const CHUNK=1<<17;
@@ -1157,73 +1426,64 @@ async function applyGainAndLimit(srcChans,fs,gain,ceil,onProgress){
 </script>
 <script>
 'use strict';
-/* ═══════════ ⑦⑧ 結果表示 ═══════════ */
-function showResultArea(){
+/* ═══════════ ⑧ 書き出し結果表示 ═══════════ */
+function showExportResult(){
   $('stLufsBefore').textContent=S.origLufs===-Infinity?'−∞':fmt1(S.origLufs);
   $('stLufsAfter').textContent=S.processed.lufs===-Infinity?'−∞':fmt1(S.processed.lufs);
   $('stPeakBefore').textContent=fmt1(S.origPeakDb);
   $('stPeakAfter').textContent=fmt1(S.processed.peakDb);
-  drawResultWave();
-  resetPlayerUI();
   const r=$('result');
-  r.classList.remove('show');
+  r.classList.remove('show','stale');
   void r.offsetWidth;               // アニメーション再トリガー
   r.classList.add('show');
   $('nextTools').classList.add('show');
-  setTimeout(()=>r.scrollIntoView({behavior:'smooth',block:'start'}),150);
-}
-function drawResultWave(){
-  const cv=$('resWave'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
-  ctx.clearRect(0,0,W,H);
-  const draw=(peaks,color,alpha)=>{
-    const n=peaks.length,bw=W/n;
-    ctx.fillStyle=color;ctx.globalAlpha=alpha;
-    for(let i=0;i<n;i++){
-      const h=Math.max(2,peaks[i]*H*0.94);
-      ctx.fillRect(i*bw,(H-h)/2,Math.max(1,bw*0.7),h);
-    }
-    ctx.globalAlpha=1;
-  };
-  draw(S.origPeaks,'#c9bfae',0.9);              // 処理前（薄）
-  draw(S.processed.peaks,'#2b2620',0.82);       // 処理後（濃）
+  setTimeout(()=>r.scrollIntoView({behavior:'smooth',block:'nearest'}),150);
 }
 
-/* ═══════════ ビフォー/アフター試聴プレーヤー ═══════════ */
-const player={playing:false,offset:0,startedAt:0,srcA:null,srcB:null,gA:null,gB:null,mode:'after',raf:0};
+/* ═══════════ ⑦ 試聴プレーヤー（1ソース・dry/wet切替） ═══════════ */
+const player={playing:false,offset:0,startedAt:0,src:null,mode:'after',raf:0};
+let seekDragging=false;
 function duration(){return S.buffer?S.buffer.duration:0;}
 function playheadPos(){return player.playing?clamp(audioCtx().currentTime-player.startedAt,0,duration()):player.offset;}
 function resetPlayerUI(){
   stopPlayback();
   player.offset=0;player.mode='after';
   setABButtons();
+  applyABMode(true);
   updateSeekUI();
+  drawPlayerWave();
 }
 function setABButtons(){
   $('abBefore').classList.toggle('on',player.mode==='before');
   $('abAfter').classList.toggle('on',player.mode==='after');
 }
-function startSources(offset){
+// 処理前/処理後: 同一ソースの経路ゲイン切替なので再生位置は完全に維持される
+function applyABMode(immediate){
+  if(!live.nodes)return;
+  const n=live.nodes,now=audioCtx().currentTime;
+  const wet=player.mode==='after'?1:0;
+  if(immediate){
+    n.wet.gain.cancelScheduledValues(now);n.dry.gain.cancelScheduledValues(now);
+    n.wet.gain.value=wet;n.dry.gain.value=1-wet;
+  }else{
+    n.wet.gain.setTargetAtTime(wet,now,0.012);   // クリック音防止の極短クロスフェード
+    n.dry.gain.setTargetAtTime(1-wet,now,0.012);
+  }
+}
+function startSource(offset){
+  if(!live.nodes)return;
   const ctx=audioCtx();
   if(ctx.state==='suspended')ctx.resume();
-  const mk=(buf)=>{const s=ctx.createBufferSource();s.buffer=buf;const g=ctx.createGain();s.connect(g);g.connect(ctx.destination);return[s,g];};
-  [player.srcA,player.gA]=mk(S.buffer);
-  [player.srcB,player.gB]=mk(S.processed.buffer);
-  applyABGain();
+  const s=ctx.createBufferSource();
+  s.buffer=S.buffer;
+  s.connect(live.nodes.input);
   const t=ctx.currentTime+0.03;
-  player.srcA.start(t,offset);player.srcB.start(t,offset);
-  player.startedAt=t-offset;
-  player.playing=true;
-  player.srcB.onended=()=>{if(player.playing&&playheadPos()>=duration()-0.05)stopPlayback(true);};
+  s.start(t,offset);
+  player.src=s;player.startedAt=t-offset;player.playing=true;
+  s.onended=()=>{if(player.playing&&playheadPos()>=duration()-0.05)stopPlayback(true);};
   $('playIcon').innerHTML='<path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/>';
   $('playBtn').setAttribute('aria-label','一時停止');
   rafLoop();
-}
-function applyABGain(){
-  if(!player.gA)return;
-  const now=audioCtx().currentTime;
-  const a=player.mode==='before'?1:0,b=1-a;
-  player.gA.gain.setTargetAtTime(a,now,0.008);   // 位置を保ったまま瞬時切替（クリック音防止の極短フェード）
-  player.gB.gain.setTargetAtTime(b,now,0.008);
 }
 function stopPlayback(ended){
   if(player.raf)cancelAnimationFrame(player.raf);player.raf=0;
@@ -1231,14 +1491,15 @@ function stopPlayback(ended){
     player.offset=ended?0:playheadPos();
     player.playing=false;
   }
-  [player.srcA,player.srcB].forEach(s=>{if(s){try{s.onended=null;s.stop();}catch(e){}}});
-  player.srcA=player.srcB=player.gA=player.gB=null;
+  if(player.src){try{player.src.onended=null;player.src.stop();}catch(e){}player.src=null;}
   const icon=$('playIcon');
   if(icon){icon.innerHTML='<path d="M8 5.5v13l11-6.5z"/>';$('playBtn').setAttribute('aria-label','再生');}
   updateSeekUI();
+  drawPlayerWave();
 }
 function rafLoop(){
   updateSeekUI();
+  drawPlayerWave();
   if(player.playing)player.raf=requestAnimationFrame(rafLoop);
 }
 function updateSeekUI(){
@@ -1248,13 +1509,17 @@ function updateSeekUI(){
   $('pTime').textContent=fmtTime(p)+' / '+fmtTime(d);
 }
 $('playBtn').addEventListener('click',()=>{
-  if(!S.processed)return;
+  if(!S.buffer||!live.nodes)return;
   if(player.playing)stopPlayback();
-  else{if(player.offset>=duration()-0.05)player.offset=0;startSources(player.offset);}
+  else{if(player.offset>=duration()-0.05)player.offset=0;startSource(player.offset);}
 });
-$('abBefore').addEventListener('click',()=>{player.mode='before';setABButtons();applyABGain();});
-$('abAfter').addEventListener('click',()=>{player.mode='after';setABButtons();applyABGain();});
-let seekDragging=false;
+$('abBefore').addEventListener('click',()=>{player.mode='before';setABButtons();applyABMode(false);});
+$('abAfter').addEventListener('click',()=>{player.mode='after';setABButtons();applyABMode(false);});
+function seekTo(pos){
+  pos=clamp(pos,0,duration());
+  if(player.playing){stopPlayback();player.offset=pos;startSource(pos);}
+  else{player.offset=pos;updateSeekUI();drawPlayerWave();}
+}
 $('seek').addEventListener('input',e=>{
   seekDragging=true;
   const d=duration(),pos=e.target.value/1000*d;
@@ -1263,10 +1528,50 @@ $('seek').addEventListener('input',e=>{
 });
 $('seek').addEventListener('change',e=>{
   seekDragging=false;
-  const pos=e.target.value/1000*duration();
-  if(player.playing){stopPlayback();player.offset=pos;startSources(pos);}
-  else{player.offset=pos;updateSeekUI();}
+  seekTo(e.target.value/1000*duration());
 });
+$('pvWave').addEventListener('click',e=>{
+  const r=e.currentTarget.getBoundingClientRect();
+  seekTo((e.clientX-r.left)/r.width*duration());
+});
+
+/* 波形（元波形＋再生済み部分を濃色で表示） */
+let waveFull=null,waveFaded=null;
+function renderWaveTo(cv,alpha){
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height,peaks=S.origPeaks;
+  ctx.clearRect(0,0,W,H);
+  if(!peaks)return;
+  const n=peaks.length,bw=W/n;
+  ctx.fillStyle='#2b2620';ctx.globalAlpha=alpha;
+  for(let i=0;i<n;i++){
+    const h=Math.max(2,peaks[i]*H*0.94);
+    ctx.fillRect(i*bw,(H-h)/2,Math.max(1,bw*0.7),h);
+  }
+  ctx.globalAlpha=1;
+}
+function buildWaveCache(){
+  const cv=$('pvWave');
+  waveFull=document.createElement('canvas');waveFull.width=cv.width;waveFull.height=cv.height;
+  waveFaded=document.createElement('canvas');waveFaded.width=cv.width;waveFaded.height=cv.height;
+  renderWaveTo(waveFull,0.9);
+  renderWaveTo(waveFaded,0.28);
+}
+function drawPlayerWave(){
+  const cv=$('pvWave');
+  if(!cv||!waveFull)return;
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.drawImage(waveFaded,0,0);
+  const d=duration();
+  if(d>0){
+    const x=Math.round(playheadPos()/d*W);
+    if(x>0){
+      ctx.save();ctx.beginPath();ctx.rect(0,0,x,H);ctx.clip();
+      ctx.drawImage(waveFull,0,0);ctx.restore();
+    }
+    ctx.fillStyle='#2b2620';ctx.fillRect(Math.max(0,x-1),0,2.5,H);
+  }
+}
 
 /* ═══════════ ダウンロード（WAV / MP3） ═══════════ */
 function baseName(){return S.fileName.replace(/\.[^.]+$/,'')||'track';}
