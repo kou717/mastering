@@ -393,8 +393,11 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--ink-soft);mar
       <div class="nav-menu" role="menu">
         <a href="/mastering/" role="menuitem">マスタリング（音圧調整）<span class="now">公開中</span></a>
         <span role="menuitem">WAV/MP3変換<span class="soon">準備中</span></span>
-        <span role="menuitem">フェード・無音カット<span class="soon">準備中</span></span>
         <span role="menuitem">歌詞ふりがな<span class="soon">準備中</span></span>
+        <span role="menuitem">フェード・無音カット<span class="soon">準備中</span></span>
+        <span role="menuitem">ループ切り出し<span class="soon">準備中</span></span>
+        <span role="menuitem">BPM・キー検出<span class="soon">準備中</span></span>
+        <span role="menuitem">Sunoタグビルダー<span class="soon">準備中</span></span>
       </div>
     </nav>
   </div>
@@ -595,6 +598,9 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--ink-soft);mar
     <p>ここで重要なのは、Sunoなどが書き出す楽曲は -16〜-20 LUFS程度と、基準より小さめであることが多い点です。基準より小さい曲は、他の曲と並んだときに「なんだか迫力がない」「音が細い」と感じられてしまいます。逆に基準を大きく超えても、プラットフォーム側で音量を下げられるうえ、音の潰れ（歪み）だけが残って損をします。だからこそ「基準にぴったり合わせる」ことに意味があり、本ツールの「配信基準」プリセットは -14 LUFSへ、音割れを防ぐリミッター（天井 -1 dBFS）をかけながら自動調整します。</p>
     <p>なお、すべての処理はWeb Audio APIを使ってお使いのブラウザの中だけで行われます。音声ファイルがサーバーへアップロードされることは一切ありません。通信が発生しないため処理も高速で、プライバシーの心配もありません。</p>
 
+    <!-- 広告枠C（記事中） -->
+    <!-- AD-C -->
+
     <h2>よくある質問（FAQ）</h2>
     <div class="faq">
       <details>
@@ -631,14 +637,15 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--ink-soft);mar
       <b>免責事項：</b>本ツールは現状のまま無償で提供されるものであり、処理結果の品質、特定目的への適合性、および処理後の楽曲の利用によって生じたいかなる損害についても、運営者は責任を負いません。楽曲の権利関係（商用利用の可否等）は、生成に使用したサービスの規約に従ってご自身でご確認ください。大切な音源は必ず元ファイルを保管したうえでご利用ください。
     </div>
   </article>
-
-  <!-- AD-C -->
 </main>
 
 <footer class="site-footer">
   <div class="wrap">
     <nav>
       <a href="#">全ツール</a>
+      <a href="#">解説：配信基準の音圧にする方法</a>
+      <a href="#">解説：LUFSとは？</a>
+      <a href="#">解説：歌詞とふりがなのコツ</a>
       <a href="#">プライバシーポリシー</a>
       <a href="#">運営者情報</a>
       <a href="#">お問い合わせ</a>
