@@ -416,7 +416,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     </div>
 
     <!-- ⑤ プリセット -->
-    <div class="sec-label"><span class="step">2</span>仕上がりのイメージを選ぶ</div>
+    <div class="sec-label"><span class="step">2</span>音の方向性を選ぶ</div>
     <div class="presets" role="radiogroup" aria-label="マスタリングプリセット">
       <div class="preset">
         <input type="radio" name="preset" id="pr-standard" value="standard" checked>
@@ -1178,6 +1178,7 @@ function applyLiveParams(){
   updateLiveInfo(s);
   scheduleCalibration(s);
   markExportStale();
+  if(typeof updateWaveTarget==='function'&&player.mode==='after')updateWaveTarget(true);
 }
 function estimateMakeupDb(s){
   if(s.target===null)return S.origPeakDb>s.ceilDb?s.ceilDb-S.origPeakDb:0;
@@ -1222,6 +1223,7 @@ async function runCalibration(){
     const cur=resolveSettings();
     if(chainKey(cur)===ck&&cur.target!==null&&live.nodes)
       live.nodes.makeup.gain.setTargetAtTime(dB2lin(estimateMakeupDb(cur)),audioCtx().currentTime,0.15);
+    if(typeof updateWaveTarget==='function'&&player.mode==='after')updateWaveTarget(true);
   }catch(e){}
 }
 function getSegmentBuffer(){
@@ -1444,8 +1446,8 @@ $('playBtn').addEventListener('click',()=>{
   if(player.playing)stopPlayback();
   else{if(player.offset>=duration()-0.05)player.offset=0;startSource(player.offset);}
 });
-$('abBefore').addEventListener('click',()=>{player.mode='before';setABButtons();applyABMode(false);});
-$('abAfter').addEventListener('click',()=>{player.mode='after';setABButtons();applyABMode(false);});
+$('abBefore').addEventListener('click',()=>{player.mode='before';setABButtons();applyABMode(false);updateWaveTarget(true);});
+$('abAfter').addEventListener('click',()=>{player.mode='after';setABButtons();applyABMode(false);updateWaveTarget(true);});
 function seekTo(pos){
   pos=clamp(pos,0,duration());
   if(player.playing){stopPlayback();player.offset=pos;startSource(pos);}
@@ -1466,9 +1468,9 @@ $('pvWave').addEventListener('click',e=>{
   seekTo((e.clientX-r.left)/r.width*duration());
 });
 
-/* ═══════════ リッチ波形パネル（dB軸・時間ルーラー・LEDメーター） ═══════════ */
+/* ═══════════ リッチ波形パネル（dB軸・時間ルーラー・LEDメーター・処理前後の可視化） ═══════════ */
 let plotCache=null,plotGeo=null,meterLevel=0,meterBuf=null;
-function buildWaveCache(){plotCache=null;drawPlayerWave();}   // 無効化して次フレームで再構築
+let waveDisp=null,waveTarget=null,waveRaf=0,waveN=0;   // 表示中/目標の振幅エンベロープ（処理前⇔処理後をトゥイーン）
 
 function meterColor(f){
   if(f>0.955) return '#ff4b4b';
@@ -1481,6 +1483,46 @@ function meterColor(f){
 function niceStep(dur){const c=[5,10,15,30,60,120,300];for(const s of c)if(dur/s<=8)return s;return 300;}
 function roundRectDev(g,x,y,w,h,r){r=Math.min(r,h/2,w/2);g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
 
+/* 現在の設定が波形（＝音圧・リミッター）にどう効くかを近似してエンベロープを作る */
+function reducedMotion(){return matchMedia('(prefers-reduced-motion: reduce)').matches;}
+function computeWaveInto(arr){
+  const src=S.origPeaks;
+  if(!src){arr.fill(0);return;}
+  if(player.mode==='before'){for(let i=0;i<src.length;i++)arr[i]=src[i];return;}
+  const s=resolveSettings();
+  const g=dB2lin(estimateMakeupDb(s));            // 目標音圧までのゲイン（キャリブレーション反映）
+  const c=s.ceil,knee=c*0.78;                     // リミッターのシーリング
+  for(let i=0;i<src.length;i++){
+    let x=src[i]*g;
+    if(x>knee)x=knee+(c-knee)*Math.tanh((x-knee)/(c-knee)); // ソフトリミット＝天井付近が潰れる
+    arr[i]=x;
+  }
+}
+function setWaveArrays(){
+  waveN=(S.origPeaks&&S.origPeaks.length)||600;
+  waveDisp=new Float32Array(waveN);waveTarget=new Float32Array(waveN);
+}
+function updateWaveTarget(animate){
+  if(!waveDisp||waveDisp.length!==((S.origPeaks&&S.origPeaks.length)||600))setWaveArrays();
+  computeWaveInto(waveTarget);
+  if(animate===false||reducedMotion()){waveDisp.set(waveTarget);drawPlayerWave();return;}
+  if(!waveRaf)startWaveTween();
+}
+function startWaveTween(){
+  const step=()=>{
+    let moved=false;
+    for(let i=0;i<waveDisp.length;i++){
+      const d=waveTarget[i]-waveDisp[i];
+      if(Math.abs(d)>0.0008){waveDisp[i]+=d*0.2;moved=true;}else waveDisp[i]=waveTarget[i];
+    }
+    drawPlayerWave();
+    waveRaf=moved?requestAnimationFrame(step):0;
+  };
+  waveRaf=requestAnimationFrame(step);
+}
+
+function buildWaveCache(){plotCache=null;setWaveArrays();updateWaveTarget(false);}   // 解析直後の初期化
+
 function rebuildPlotCache(cssW,cssH,dpr){
   const c=document.createElement('canvas');c.width=Math.round(cssW*dpr);c.height=Math.round(cssH*dpr);
   const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
@@ -1490,34 +1532,18 @@ function rebuildPlotCache(cssW,cssH,dpr){
   const dur=duration()||1;
   plotGeo={cssW,cssH,dpr,plotL,plotR,plotT,plotB,plotH,plotW,midY,metX:cssW-MET_W,metW:MET_W};
   g.font='500 10px "Hiragino Kaku Gothic ProN",-apple-system,sans-serif';g.textBaseline='middle';
-  // dB軸（両側）
   const dbs=[0,-6,-12,-18,-24,-30,-36,-42,-48];
   g.fillStyle='#5e6a80';
   dbs.forEach(db=>{const y=plotT+(-db/48)*plotH;g.textAlign='right';g.fillText(String(db),plotL-6,y);g.textAlign='left';g.fillText(String(db),plotR+6,y);});
-  // 時間ルーラー
   const major=niceStep(dur),minor=major/3;
   g.strokeStyle='rgba(120,140,175,.45)';g.lineWidth=1;g.beginPath();
   for(let s=0;s<=dur+0.01;s+=minor){const x=plotL+(s/dur)*plotW;const isMaj=Math.abs(s%major)<0.001;const h=isMaj?7:3.5;g.moveTo(Math.round(x)+.5,rulerH-h);g.lineTo(Math.round(x)+.5,rulerH);}
   g.stroke();
   g.fillStyle='#6b7488';g.textBaseline='alphabetic';
   for(let s=0;s<=dur+0.01;s+=major){const x=plotL+(s/dur)*plotW;const mm=Math.floor(s/60),ss=String(Math.round(s%60)).padStart(2,'0');const last=s+major>dur+0.01;g.textAlign=s===0?'left':(last?'right':'center');g.fillText(mm+':'+ss,s===0?plotL:(last?Math.min(x,plotR):x),rulerH-11);}
-  // 縦の点線
   g.strokeStyle='rgba(90,120,170,.16)';g.lineWidth=1;g.setLineDash([4,5]);
   for(let s=major;s<dur-0.01;s+=major){const x=Math.round(plotL+(s/dur)*plotW)+.5;g.beginPath();g.moveTo(x,plotT);g.lineTo(x,plotB);g.stroke();}
   g.setLineDash([]);
-  // 波形（ブルー本体＋シアンのコア）
-  const peaks=S.origPeaks;
-  if(peaks&&peaks.length){
-    const n=peaks.length,bw=plotW/n;
-    function pass(mult,color,glow,wid){
-      g.strokeStyle=color;g.lineWidth=wid;g.lineCap='round';g.shadowColor=glow;g.shadowBlur=glow?6:0;g.beginPath();
-      for(let i=0;i<n;i++){const amp=Math.min(peaks[i]*mult*(plotH*0.46),plotH*0.5);const x=plotL+i*bw;g.moveTo(x,midY-amp);g.lineTo(x,midY+amp);}
-      g.stroke();g.shadowBlur=0;
-    }
-    pass(0.78,'rgba(46,120,230,.85)','rgba(40,110,235,.5)',Math.max(1,bw*0.72));
-    pass(0.34,'rgba(158,218,255,.95)','rgba(120,200,255,.45)',Math.max(1,bw*0.66));
-  }
-  g.strokeStyle='rgba(150,210,255,.26)';g.lineWidth=1;g.beginPath();g.moveTo(plotL,midY+.5);g.lineTo(plotR,midY+.5);g.stroke();
   plotCache=c;
 }
 function readMeterLevel(){
@@ -1526,10 +1552,8 @@ function readMeterLevel(){
     if(!meterBuf||meterBuf.length!==n.analyser.fftSize)meterBuf=new Uint8Array(n.analyser.fftSize);
     n.analyser.getByteTimeDomainData(meterBuf);
     let peak=0;for(let i=0;i<meterBuf.length;i++){const v=Math.abs(meterBuf[i]-128)/128;if(v>peak)peak=v;}
-    meterLevel=peak>meterLevel?peak:meterLevel*0.86;   // 速いアタック・遅いリリース
-  }else{
-    meterLevel*=0.9;
-  }
+    meterLevel=peak>meterLevel?peak:meterLevel*0.86;
+  }else meterLevel*=0.9;
   return Math.min(1,meterLevel);
 }
 function drawMeter(g,ge){
@@ -1544,6 +1568,22 @@ function drawMeter(g,ge){
   }
   g.globalAlpha=1;g.shadowBlur=0;
 }
+function drawWaveform(g,ge){
+  if(!waveDisp)return;
+  const dpr=ge.dpr,n=waveDisp.length,bw=ge.plotW/n,AMP=ge.plotH*0.42,cap=ge.plotH*0.49,midY=ge.midY;
+  function pass(ratio,color,glow,wid){
+    g.strokeStyle=color;g.lineWidth=wid*dpr;g.lineCap='round';g.shadowColor=glow;g.shadowBlur=glow?6*dpr:0;g.beginPath();
+    for(let i=0;i<n;i++){
+      const amp=Math.min(waveDisp[i]*AMP*ratio,cap)*dpr;
+      const x=(ge.plotL+i*bw)*dpr;
+      g.moveTo(x,midY*dpr-amp);g.lineTo(x,midY*dpr+amp);
+    }
+    g.stroke();g.shadowBlur=0;
+  }
+  pass(1.0,'rgba(46,120,230,.85)','rgba(40,110,235,.5)',Math.max(1,bw*0.72));
+  pass(0.44,'rgba(158,218,255,.95)','rgba(120,200,255,.45)',Math.max(1,bw*0.66));
+  g.strokeStyle='rgba(150,210,255,.26)';g.lineWidth=1;g.beginPath();g.moveTo(ge.plotL*dpr,midY*dpr+.5);g.lineTo(ge.plotR*dpr,midY*dpr+.5);g.stroke();
+}
 function drawPlayerWave(){
   const cv=$('pvWave');if(!cv)return;
   const dpr=Math.min(window.devicePixelRatio||1,2.5),cssW=cv.clientWidth,cssH=cv.clientHeight;
@@ -1554,10 +1594,9 @@ function drawPlayerWave(){
   const g=cv.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,cv.width,cv.height);
   g.drawImage(plotCache,0,0);
   const ge=plotGeo,dur=duration()||1,p=playheadPos();
+  drawWaveform(g,ge);
   const px=(ge.plotL+(p/dur)*ge.plotW)*dpr;
-  // 未再生部分を薄く沈める
   g.fillStyle='rgba(4,7,14,.5)';g.fillRect(px,(ge.plotT-2)*dpr,(ge.plotR)*dpr-px,(ge.plotH+4)*dpr);
-  // 再生位置ライン
   g.fillStyle='rgba(230,240,255,.9)';g.fillRect(px-dpr,(ge.plotT-2)*dpr,2*dpr,(ge.plotH+4)*dpr);
   drawMeter(g,ge);
 }
