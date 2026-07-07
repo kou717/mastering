@@ -94,7 +94,8 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 </style>
 <style>
 /* ── screen 3 adjust ── */
-.back-link{display:inline-flex;align-items:center;gap:7px;margin:22px 0 4px;font-size:13.5px;font-weight:700;color:var(--mute);text-decoration:none;border-radius:999px;padding:7px 14px 7px 10px;transition:all .2s ease}
+.adjust-top{display:flex;align-items:center;gap:12px;margin:20px 0 0;min-width:0}
+.back-link{display:inline-flex;align-items:center;gap:7px;flex:none;font-size:13.5px;font-weight:700;color:var(--mute);text-decoration:none;border-radius:999px;padding:7px 14px 7px 10px;transition:all .2s ease}
 .back-link:hover{color:var(--ink);background:rgba(120,158,224,.1)}
 .back-link svg{width:16px;height:16px}
 .queue{display:none;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
@@ -103,9 +104,9 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 .queue button:hover{border-color:var(--blue);color:var(--ink);transform:translateY(-1px)}
 .queue button.current{background:var(--blue);color:#fff;border-color:var(--blue)}
 
-.song{display:flex;align-items:baseline;gap:12px;margin:12px 2px 0}
-.song .lbl{font-size:13.5px;color:var(--mute);font-weight:600;flex:none}
-.song .name{font-size:20px;font-weight:800;letter-spacing:.01em;word-break:break-all}
+.song{display:flex;align-items:baseline;gap:10px;margin:0;flex:1;min-width:0;justify-content:flex-end}
+.song .lbl{font-size:13px;color:var(--mute);font-weight:600;flex:none}
+.song .name{font-size:18px;font-weight:800;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* stat cards */
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
@@ -299,41 +300,53 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 .site-footer .copy{margin-top:14px;font-size:11.5px;color:var(--mute2)}
 
 @media(max-width:480px){
-  /* スマホ：縦の詰めと優先度の低い項目の縮小（アプリらしい情報密度に） */
-  .stats{gap:10px}
+  /* スマホ：アプリとして1画面強に収める（見出し撤去・低優先項目の非表示・余白圧縮） */
+  .stats{gap:10px;margin-top:10px}
   .player canvas{height:195px}
-  .back-link{margin:14px 0 2px;font-size:13px}
-  .song{margin-top:10px}
-  .song .name{font-size:18px}
-  .song .lbl{font-size:12.5px}
-  .stat{padding:12px 12px}
-  .stat .badge{width:42px;height:42px}
-  .stat .badge svg{width:22px;height:22px}
-  .stat .val .num{font-size:clamp(25px,7vw,30px)}
-  .analysis-note{margin-top:9px;font-size:12px;padding:9px 13px;line-height:1.45}
-  .sec-label{margin:16px 0 9px;font-size:13.5px}
-  .sec-sub{display:none}
-  .player{padding:11px}
-  .player-row{margin-bottom:9px}
-  .play-btn{width:46px;height:46px}
-  .ab-switch button{padding:8px 14px}
-  .live-info{margin-top:7px;font-size:11px}
-  .li-sub{display:none}
-  .preset label{padding:12px 3px 10px;gap:7px}
-  .intensity{padding:13px 15px}
+  .adjust-top{margin:12px 0 0}
+  .back-link{font-size:12px;padding:6px 10px 6px 6px}
+  .back-link svg{width:14px;height:14px}
+  .song .lbl{display:none}
+  .song .name{font-size:15px}
+  .stat{padding:11px 11px}
+  .stat .badge{width:40px;height:40px}
+  .stat .badge svg{width:21px;height:21px}
+  .stat .val .num{font-size:clamp(24px,6.8vw,29px)}
+  .stat .cap{margin-top:5px}
+  .analysis-note{margin-top:9px;font-size:11.5px;padding:8px 12px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .note-sub{display:none}
+  .sec-label{display:none}
+  .player{padding:10px;margin-top:12px}
+  .player-row{margin-bottom:8px}
+  .play-btn{width:42px;height:42px}
+  .play-btn svg{width:17px;height:17px}
+  .ab-switch button{padding:7px 13px;min-height:31px}
+  .p-time{font-size:11.5px}
+  .seek{margin-top:6px;height:20px}
+  .live-info{display:none}
+  .presets{margin-top:12px;gap:7px}
+  .preset label{padding:11px 3px 9px;gap:6px}
+  .preset .pi{width:22px;height:22px}
+  .preset .pi svg{width:21px;height:21px}
+  .intensity{margin-top:10px;padding:11px 15px 13px}
   .intensity .row .t{font-size:13px}
-  .intensity .row .val{font-size:17px}
-  .intensity input[type=range]{margin-top:5px}
-  .intensity .marks{font-size:10px;margin-top:5px}
-  .clarity{padding:12px 15px;margin-top:10px}
+  .intensity .row .val{font-size:16px}
+  .intensity input[type=range]{margin-top:2px;height:24px}
+  .intensity .marks{display:none}
+  .clarity{padding:11px 15px;margin-top:10px}
   .clarity .ctitle{font-size:14px}
   .clarity .cdesc{display:none}
-  .clarity .state{width:26px;font-size:12px}
+  .clarity .ci{width:21px;height:21px}
+  .clarity .state{width:26px;font-size:11.5px}
+  .switch{width:48px;height:27px}
+  .switch::after{width:21px;height:21px}
+  .clarity input:checked~.right .switch::after{transform:translateX(21px)}
   .adv{margin-top:10px}
-  .adv summary{padding:13px 16px;font-size:13.5px}
-  .run-area{margin-top:16px}
-  .run-btn{font-size:18px;padding:16px}
-  .note{margin-top:10px;font-size:12px}
+  .adv summary{padding:11px 16px;font-size:13px}
+  .run-area{margin-top:14px}
+  .run-btn{font-size:17.5px;padding:15px;border-radius:15px}
+  .run-btn svg{width:21px;height:21px}
+  .note{margin-top:9px;font-size:11.5px}
   .next-tools{margin-top:20px}
   .result{margin-top:22px}
 }
@@ -412,13 +425,14 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 
   <!-- ═══ 画面3：調整 ═══ -->
   <section class="screen" id="screen-adjust" data-screen="adjust">
-    <a class="back-link" href="#" id="backLink">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
-      別の曲を選ぶ
-    </a>
+    <div class="adjust-top">
+      <a class="back-link" href="#" id="backLink">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+        別の曲を選ぶ
+      </a>
+      <div class="song"><span class="lbl">曲名</span><span class="name" id="ajFname">—</span></div>
+    </div>
     <div class="queue" id="queue"></div>
-
-    <div class="song"><span class="lbl">曲名</span><span class="name" id="ajFname">—</span></div>
     <div class="stats" id="analysisCard">
       <div class="stat lufs">
         <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="#4d95ff" stroke-width="2" stroke-linecap="round"><path d="M4 14v3M8 10v7M12 6v11M16 12v5M20 9v4"/></svg></span>
@@ -864,13 +878,13 @@ function prepareAdjustScreen(){
   $('ajLufs').innerHTML=(S.origLufs===-Infinity?'−∞':fmt1(S.origLufs))+'<small>LUFS</small>';
   $('ajPeak').innerHTML=fmt1(S.origPeakDb)+'<small>dBFS</small>';
   const d=S.origLufs-(-14);
-  let note;
+  let note,sub='';
   if(S.origLufs===-Infinity)note='無音に近いファイルのようです。';
-  else if(d<-4)note='配信基準（-14 LUFS）よりかなり小さめです。マスタリングで大きく改善できます。';
-  else if(d<-1.5)note='配信基準（-14 LUFS）よりやや小さめです。整えるとちょうど良くなります。';
-  else if(d<=1.5)note='配信基準（-14 LUFS）にほぼ合っています。仕上げの微調整に。';
-  else note='配信基準より大きめです。音割れを防ぎつつ整えるのがおすすめです。';
-  $('ajNote').textContent=note;
+  else if(d<-4){note='配信基準（-14 LUFS）よりかなり小さめです。';sub='マスタリングで大きく改善できます。';}
+  else if(d<-1.5){note='配信基準（-14 LUFS）よりやや小さめです。';sub='整えるとちょうど良くなります。';}
+  else if(d<=1.5){note='配信基準（-14 LUFS）にほぼ合っています。';sub='仕上げの微調整に。';}
+  else{note='配信基準より大きめです。';sub='音割れを防ぎつつ整えるのがおすすめです。';}
+  $('ajNote').innerHTML=note+(sub?'<span class="note-sub"> '+sub+'</span>':'');
   hideExport();
   buildWaveCache();
   resetPlayerUI();
