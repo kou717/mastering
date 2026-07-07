@@ -1520,6 +1520,7 @@ $('pvWave').addEventListener('click',e=>{
 
 /* ═══════════ リッチ波形パネル（dB軸・時間ルーラー・LEDメーター・処理前後の可視化） ═══════════ */
 let plotCache=null,plotGeo=null,meterLevel=0,meterBuf=null;
+let specBuf=null,specSmooth=null,specAlpha=0;   // リアルタイムスペクトラム（再生中のみ・波形の背面）
 let waveDisp=null,waveTarget=null,waveRaf=0,waveN=0;   // 表示中/目標の振幅エンベロープ（処理前⇔処理後をトゥイーン）
 
 function meterColor(f){
@@ -1634,6 +1635,38 @@ function drawWaveform(g,ge){
   pass(0.44,'rgba(158,218,255,.95)','rgba(120,200,255,.45)',Math.max(1,bw*0.66));
   g.strokeStyle='rgba(150,210,255,.26)';g.lineWidth=1;g.beginPath();g.moveTo(ge.plotL*dpr,midY*dpr+.5);g.lineTo(ge.plotR*dpr,midY*dpr+.5);g.stroke();
 }
+/* 再生中のみ：処理後の音の周波数バランスを波形の背面にシルエット表示 */
+function drawSpectrum(g,ge){
+  const target=player.playing?1:0;
+  specAlpha+=(target-specAlpha)*0.12;
+  if(specAlpha<0.015){if(!target)specAlpha=0;return;}
+  const n=live.nodes;if(!n||!n.analyser)return;
+  const an=n.analyser,bins=an.frequencyBinCount;
+  if(!specBuf||specBuf.length!==bins)specBuf=new Uint8Array(bins);
+  if(player.playing)an.getByteFrequencyData(specBuf);
+  const NP=72;
+  if(!specSmooth||specSmooth.length!==NP)specSmooth=new Float32Array(NP);
+  const nyq=audioCtx().sampleRate/2,dpr=ge.dpr;
+  const L=ge.plotL*dpr,W=ge.plotW*dpr,B=ge.plotB*dpr,H=ge.plotH*dpr;
+  g.save();
+  g.globalAlpha=0.26*specAlpha;
+  const grad=g.createLinearGradient(0,B-H,0,B);
+  grad.addColorStop(0,'rgba(140,210,255,.95)');
+  grad.addColorStop(1,'rgba(40,110,235,.35)');
+  g.fillStyle=grad;
+  g.beginPath();g.moveTo(L,B);
+  for(let k=0;k<NP;k++){
+    const f=40*Math.pow(400,k/(NP-1));            // 40Hz→16kHz（対数スケール）
+    const bin=Math.min(bins-1,Math.round(f/nyq*bins));
+    const v=(specBuf[bin]||0)/255;
+    specSmooth[k]+=(v-specSmooth[k])*0.35;
+    g.lineTo(L+(k/(NP-1))*W,B-Math.pow(specSmooth[k],1.25)*H*0.92);
+  }
+  g.lineTo(L+W,B);g.closePath();g.fill();
+  g.restore();
+  // 停止後もフェードアウトが終わるまで描画を継続
+  if(!player.playing&&specAlpha>0.015&&!player.raf)requestAnimationFrame(drawPlayerWave);
+}
 function drawPlayerWave(){
   const cv=$('pvWave');if(!cv)return;
   const dpr=Math.min(window.devicePixelRatio||1,2.5),cssW=cv.clientWidth,cssH=cv.clientHeight;
@@ -1647,6 +1680,7 @@ function drawPlayerWave(){
   drawWaveform(g,ge);
   const px=(ge.plotL+(p/dur)*ge.plotW)*dpr;
   g.fillStyle='rgba(4,7,14,.5)';g.fillRect(px,(ge.plotT-2)*dpr,(ge.plotR)*dpr-px,(ge.plotH+4)*dpr);
+  drawSpectrum(g,ge);
   g.fillStyle='rgba(230,240,255,.9)';g.fillRect(px-dpr,(ge.plotT-2)*dpr,2*dpr,(ge.plotH+4)*dpr);
   drawMeter(g,ge);
 }
