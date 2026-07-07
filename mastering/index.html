@@ -299,10 +299,43 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 .site-footer .copy{margin-top:14px;font-size:11.5px;color:var(--mute2)}
 
 @media(max-width:480px){
+  /* スマホ：縦の詰めと優先度の低い項目の縮小（アプリらしい情報密度に） */
   .stats{gap:10px}
-  .run-btn{font-size:18px}
-  .p-time{width:100%;margin-left:0;text-align:right}
   .player canvas{height:195px}
+  .back-link{margin:14px 0 2px;font-size:13px}
+  .song{margin-top:10px}
+  .song .name{font-size:18px}
+  .song .lbl{font-size:12.5px}
+  .stat{padding:12px 12px}
+  .stat .badge{width:42px;height:42px}
+  .stat .badge svg{width:22px;height:22px}
+  .stat .val .num{font-size:clamp(25px,7vw,30px)}
+  .analysis-note{margin-top:9px;font-size:12px;padding:9px 13px;line-height:1.45}
+  .sec-label{margin:16px 0 9px;font-size:13.5px}
+  .sec-sub{display:none}
+  .player{padding:11px}
+  .player-row{margin-bottom:9px}
+  .play-btn{width:46px;height:46px}
+  .ab-switch button{padding:8px 14px}
+  .live-info{margin-top:7px;font-size:11px}
+  .li-sub{display:none}
+  .preset label{padding:12px 3px 10px;gap:7px}
+  .intensity{padding:13px 15px}
+  .intensity .row .t{font-size:13px}
+  .intensity .row .val{font-size:17px}
+  .intensity input[type=range]{margin-top:5px}
+  .intensity .marks{font-size:10px;margin-top:5px}
+  .clarity{padding:12px 15px;margin-top:10px}
+  .clarity .ctitle{font-size:14px}
+  .clarity .cdesc{display:none}
+  .clarity .state{width:26px;font-size:12px}
+  .adv{margin-top:10px}
+  .adv summary{padding:13px 16px;font-size:13.5px}
+  .run-area{margin-top:16px}
+  .run-btn{font-size:18px;padding:16px}
+  .note{margin-top:10px;font-size:12px}
+  .next-tools{margin-top:20px}
+  .result{margin-top:22px}
 }
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}
@@ -399,7 +432,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     <div class="analysis-note" id="ajNote">—</div>
 
     <!-- ⑦ 試聴プレーヤー -->
-    <div class="sec-label"><span class="step">1</span>聴き比べる — 下の設定は再生中でも即反映</div>
+    <div class="sec-label"><span class="step">1</span>聴き比べる<span class="sec-sub"> — 下の設定は再生中でも即反映</span></div>
     <div class="player" id="playerCard">
       <div class="player-row">
         <button type="button" class="play-btn" id="playBtn" aria-label="再生">
@@ -1189,9 +1222,10 @@ function estimateMakeupDb(s){
   return clamp(s.target-base,-40,40);
 }
 function updateLiveInfo(s){
-  $('liveInfo').textContent=s.target===null
-    ?'音はそのまま・音割れ防止のみ（ピーク上限 '+fmt1(s.ceilDb)+' dBFS）'
-    :'目標音圧 '+fmt1(s.target)+' LUFS ／ ピーク上限 '+fmt1(s.ceilDb)+' dBFS（試聴は近似・保存時に精密調整）';
+  const el=$('liveInfo');
+  el.innerHTML=s.target===null
+    ?'音はそのまま・音割れ防止のみ<span class="li-sub">（ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>'
+    :'目標音圧 '+fmt1(s.target)+' LUFS ／ ピーク上限 '+fmt1(s.ceilDb)+' dBFS<span class="li-sub">（試聴は近似・保存時に精密調整）</span>';
 }
 
 /* 音量キャリブレーション: 曲中で最も大きい8秒をオフラインで通し、チェーンによる音圧変化を実測 */
