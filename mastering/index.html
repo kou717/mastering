@@ -468,6 +468,10 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     <div class="sec-label"><span class="step">2</span>音の方向性を選ぶ</div>
     <div class="presets" role="radiogroup" aria-label="マスタリングプリセット">
       <div class="preset">
+        <input type="radio" name="preset" id="pr-enhance" value="enhance">
+        <label for="pr-enhance"><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l9-9M13 5l2 2M17 3l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/><path d="M6 10l1.2 1.2"/></svg></span><span class="pl">高音質化</span></label>
+      </div>
+      <div class="preset">
         <input type="radio" name="preset" id="pr-standard" value="standard" checked>
         <label for="pr-standard"><span class="rec">推奨</span><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.4"/><path d="M7.5 7.5a6 6 0 0 0 0 9M16.5 7.5a6 6 0 0 1 0 9M4.7 4.7a10 10 0 0 0 0 14.6M19.3 4.7a10 10 0 0 1 0 14.6"/></svg></span><span class="pl">配信基準</span></label>
       </div>
@@ -483,10 +487,6 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
         <input type="radio" name="preset" id="pr-warm" value="warm">
         <label for="pr-warm"><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg></span><span class="pl">ウォーム</span></label>
       </div>
-      <div class="preset">
-        <input type="radio" name="preset" id="pr-safe" value="safe">
-        <label for="pr-safe"><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 18 4h3v3a7 7 0 0 1-7 7h-3z"/><path d="M6 20c1-4 3-6 8-8"/></svg></span><span class="pl">そのまま</span></label>
-      </div>
     </div>
 
     <!-- 強度スライダー -->
@@ -494,7 +494,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     <div class="intensity" id="intensityBox">
       <div class="row"><span class="t">適用強度</span><span class="val" id="intVal">50%</span></div>
       <input type="range" id="intensity" min="0" max="100" value="50" step="1" aria-label="適用強度">
-      <div class="marks"><span>0% ほぼ無加工</span><span>50% 標準</span><span>100% 最大</span></div>
+      <div class="marks"><span id="markLeft">15% 控えめ</span><span>50% 標準</span><span>100% 最大</span></div>
     </div>
 
     <!-- クリアさ強化トグル -->
@@ -574,7 +574,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     <p>本ツールは、SunoなどのAI音楽サービスで作成した楽曲を、YouTubeやSpotifyといった配信プラットフォームの基準に合った音圧（ラウドネス）へ自動調整する無料のマスタリングツールです。専門知識や数値の入力は一切不要で、操作は次の3ステップだけです。</p>
     <ol class="steps">
       <li><b>曲をドロップする。</b>ページ上部の枠に音声ファイル（MP3 / WAV / FLAC / OGG）をドラッグ＆ドロップするか、「ファイルを選ぶ」ボタンから選択します。スマートフォンではボタンをタップしてファイルを選んでください。読み込むとすぐに解析が始まり、曲の現在のラウドネスとピーク値が表示されます。</li>
-      <li><b>聴きながら仕上がりを選ぶ。</b>解析が終わると試聴画面に切り替わります。曲を再生しながら「配信基準」「迫力」「クリア」「ウォーム」「そのまま」のボタンを切り替えると、その場で音が変わります。「処理前」ボタンを押せばいつでも元の音と聴き比べられ、適用強度スライダーの変化もリアルタイムに反映されます（まずは標準の50%がおすすめです）。</li>
+      <li><b>聴きながら仕上がりを選ぶ。</b>解析が終わると試聴画面に切り替わります。曲を再生しながら「高音質化」「配信基準」「迫力」「クリア」「ウォーム」のボタンを切り替えると、その場で音が変わります。「処理前」ボタンを押せばいつでも元の音と聴き比べられ、適用強度スライダーの変化もリアルタイムに反映されます（まずは標準の50%がおすすめです）。</li>
       <li><b>書き出して保存する。</b>好みの設定が決まったら「マスタリング開始」を押します。数秒で正確な音圧合わせと音割れ防止リミッター（天井 -1 dBFS）を適用した完成ファイルができあがり、WAV（推奨）またはMP3でダウンロードできます。書き出し後に設定を変えた場合は、もう一度ボタンを押せば最新の設定で作り直せます。</li>
     </ol>
 
@@ -599,7 +599,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
       </details>
       <details>
         <summary>プリセットはどれを選べばいいですか？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
-        <div class="a">迷ったら「配信基準」を選べば間違いありません。ロックやEDMなど押し出しが欲しい曲は「迫力」、歌モノで声を立たせたいなら「クリア」、バラードやlo-fiには「ウォーム」が合います。音色を変えたくない場合は「そのまま」を選ぶと、音割れ防止だけを行います。</div>
+        <div class="a">配信サービス向けに音量を整えたいなら「配信基準」、音そのものの粗を取ってすっきりさせたいなら一番左の「高音質化」がおすすめです。さらに押し出しが欲しい曲は「迫力」、歌モノで声を立たせたいなら「クリア」、バラードやlo-fiには「ウォーム」。音を一切変えたくない場合は「高音質化」を強度0%にすると、音色も音量も変えず音割れ防止だけを行います。</div>
       </details>
       <details>
         <summary>強度スライダーは何が変わりますか？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
@@ -913,11 +913,11 @@ $('backLink').addEventListener('click',e=>{e.preventDefault();stopPlayback();sho
 
 /* ═══════════ ⑤ プリセット定義と設定解決 ═══════════ */
 const PRESETS={
+  enhance:{target:null,comp:null},                       // 純粋な高音質化（音量そのまま）
   standard:{target:-14,comp:null},
   power:{target:-10,comp:{ratio:3,threshold:-18}},
   clear:{target:-13,comp:{ratio:2,threshold:-20}},
-  warm:{target:-14,comp:{ratio:2,threshold:-20}},
-  safe:{target:null,comp:null}
+  warm:{target:-14,comp:{ratio:2,threshold:-20}}
 };
 const CEILING_DB=-1.0;   // 安全弁: 常時 -1.0 dBFS（詳細設定でのみ変更可）
 const TARGET_FLOOR=-8;   // 安全弁: 目標LUFSはこれより大きくできない
@@ -934,34 +934,47 @@ function selectedPreset(){const el=document.querySelector('input[name=preset]:ch
 function resolveSettings(){
   const presetKey=selectedPreset();
   const intensity=+intEl.value;
-  const k=intensity/50;                            // 強度係数（50%=1.0, 100%=2.0）
+  const k=intensity/50;                            // 味付けモード用（50%=1.0, 100%=2.0）
+  const a=intensity/100;                           // 高音質化モード用（0〜1）
   const clarityOn=$('clarityToggle').checked;
   let ceilDb=CEILING_DB;
   const advCeil=parseFloat($('advCeil').value);
   if(!isNaN(advCeil))ceilDb=clamp(advCeil,-3,-1);
-  let target=null;
-  if(presetKey!=='safe'){
+  const g=v=>clamp(v*k,-12,EQ_BOOST_MAX);
+  const eq={hp30:false,ls90:0,ls200:0,pk3k:0,hs8k:0,hs10k:0,harsh:0};
+  let target=null,comp=null,clarityAmt=0;
+
+  if(presetKey==='enhance'){
+    // 純粋な高音質化：音量は元のまま。粗取り＋分離感（強度0=無加工＝音割れ防止のみ）
+    if(a>0){
+      eq.hp30=true;                                // サブソニック整理（〜30Hz）
+      eq.pk3k=clamp(1.0*a,0,EQ_BOOST_MAX);         // 明瞭度（3kHz）
+      eq.harsh=clamp(-2.2*a,-6,0);                 // ハーシュ除去（6.8kHz）
+      eq.hs10k=clamp(2.5*a,0,EQ_BOOST_MAX);        // エア（高域の抜け）
+      clarityAmt=Math.min(2,1.2*a+(clarityOn?0.4:0)); // エキサイター＋濁り取り＋ステレオ幅
+    }else{
+      clarityAmt=clarityOn?0.4:0;                  // 0%でもクリアさ強化トグルは併用可
+    }
+    target=null;                                   // 音量は変えない（ピークだけ天井保証）
+  }else{
+    // 配信レベル調整＋味付け
     const advL=parseFloat($('advLufs').value);
     if(S.lastTouched==='manual'&&!isNaN(advL)){
       target=clamp(advL,-24,TARGET_FLOOR);
     }else{
-      // 0%=元のまま / 50%=標準 / 100%=標準+2LU（LU線形補間）
       const std=PRESETS[presetKey].target,orig=(S.origLufs===-Infinity?std:S.origLufs);
       target=intensity<=50?orig+(std-orig)*(intensity/50):std+2*(intensity-50)/50;
       target=Math.min(target,TARGET_FLOOR);
     }
+    if(k>0){
+      if(presetKey==='power')eq.ls90=g(3);
+      else if(presetKey==='clear'){eq.hs8k=g(2);eq.pk3k=g(1.5);eq.hp30=true;}
+      else if(presetKey==='warm'){eq.hs10k=g(-2);eq.ls200=g(2);}
+    }
+    const pc=PRESETS[presetKey].comp;
+    if(pc&&k>0)comp={ratio:clamp(1+(pc.ratio-1)*k,1,20),threshold:clamp(pc.threshold*k,-60,0)};
+    clarityAmt=(clarityOn&&k>0)?Math.min(k,2):0;
   }
-  const g=v=>clamp(v*k,-12,EQ_BOOST_MAX);
-  const eq={hp30:false,ls90:0,ls200:0,pk3k:0,hs8k:0,hs10k:0};
-  if(presetKey!=='safe'&&k>0){
-    if(presetKey==='power')eq.ls90=g(3);
-    else if(presetKey==='clear'){eq.hs8k=g(2);eq.pk3k=g(1.5);eq.hp30=true;}
-    else if(presetKey==='warm'){eq.hs10k=g(-2);eq.ls200=g(2);}
-  }
-  let comp=null;
-  const pc=PRESETS[presetKey].comp;
-  if(pc&&k>0)comp={ratio:clamp(1+(pc.ratio-1)*k,1,20),threshold:clamp(pc.threshold*k,-60,0)};
-  const clarityAmt=(clarityOn&&k>0)?Math.min(k,2):0;
   return {presetKey,intensity,k,target,ceilDb,ceil:dB2lin(ceilDb),eq,comp,clarityAmt};
 }
 function settingsKey(s){return [s.presetKey,s.intensity,s.clarityAmt.toFixed(2),s.target===null?'n':s.target.toFixed(2),s.ceilDb].join('|');}
@@ -969,11 +982,17 @@ function chainKey(s){return [s.presetKey,s.intensity,s.clarityAmt.toFixed(2)].jo
 
 /* UI操作 → 即時反映 */
 document.querySelectorAll('input[name=preset]').forEach(r=>r.addEventListener('change',()=>{
-  const safe=selectedPreset()==='safe';
-  $('intensityBox').classList.toggle('disabled',safe);
-  $('intensity').disabled=safe;
+  applyPresetFloor();
   applyLiveParams();
 }));
+// 高音質化のみ0%まで、他モードは下限15%
+function applyPresetFloor(){
+  const enh=selectedPreset()==='enhance';
+  intEl.min=enh?0:15;
+  if(+intEl.value<+intEl.min){intEl.value=intEl.min;}
+  const ml=$('markLeft');if(ml)ml.textContent=enh?'0% 無加工':'15% 控えめ';
+  updateSliderUI();
+}
 const intEl=$('intensity');
 function updateSliderUI(){
   $('intVal').textContent=intEl.value+'%';
@@ -987,6 +1006,7 @@ intEl.addEventListener('input',()=>{
   applyLiveParams();
 });
 updateSliderUI();
+applyPresetFloor();
 $('clarityToggle').addEventListener('change',applyLiveParams);
 $('advLufs').addEventListener('input',()=>{S.lastTouched='manual';applyLiveParams();});
 $('advCeil').addEventListener('input',()=>{S.lastTouched='manual';applyLiveParams();});
@@ -1006,6 +1026,7 @@ function buildOfflineChain(octx,src,s,nch,srcBuf){
   if(s.eq.pk3k)mk('peaking',3000,s.eq.pk3k,1.1);
   if(s.eq.hs8k)mk('highshelf',8000,s.eq.hs8k);
   if(s.eq.hs10k)mk('highshelf',10000,s.eq.hs10k);
+  if(s.eq.harsh)mk('peaking',6800,s.eq.harsh,1.0);
   if(s.comp){
     const c=octx.createDynamicsCompressor();
     c.ratio.value=s.comp.ratio;c.threshold.value=s.comp.threshold;
@@ -1155,6 +1176,7 @@ async function initLiveAudio(){
   n.hp30=BQ('highpass',5);
   n.ls90=BQ('lowshelf',90);n.ls200=BQ('lowshelf',200);
   n.pk3k=BQ('peaking',3000,1.1);n.hs8k=BQ('highshelf',8000);n.hs10k=BQ('highshelf',10000);
+  n.harsh=BQ('peaking',6800,1.0);
   n.comp=ctx.createDynamicsCompressor();all.push(n.comp);
   n.comp.ratio.value=1;n.comp.threshold.value=0;n.comp.knee.value=6;n.comp.attack.value=0.01;n.comp.release.value=0.25;
   // ── クリアさ強化（常設・OFF時はニュートラル） ──
@@ -1176,7 +1198,7 @@ async function initLiveAudio(){
   }
   n.wet=G(1);
   // ── 配線 ──
-  const chain=[n.input,n.hp30,n.ls90,n.ls200,n.pk3k,n.hs8k,n.hs10k,n.comp];
+  const chain=[n.input,n.hp30,n.ls90,n.ls200,n.pk3k,n.hs8k,n.hs10k,n.harsh,n.comp];
   for(let i=0;i<chain.length-1;i++)chain[i].connect(chain[i+1]);
   n.comp.connect(n.claritySum);
   n.comp.connect(n.exHp);n.exHp.connect(n.exShaper);n.exShaper.connect(n.exGain);n.exGain.connect(n.claritySum);
@@ -1216,6 +1238,7 @@ function applyLiveParams(){
   set(n.hp30.frequency,s.eq.hp30?30:5);
   set(n.ls90.gain,s.eq.ls90);set(n.ls200.gain,s.eq.ls200);
   set(n.pk3k.gain,s.eq.pk3k);set(n.hs8k.gain,s.eq.hs8k);set(n.hs10k.gain,s.eq.hs10k);
+  set(n.harsh.gain,s.eq.harsh);
   set(n.comp.ratio,s.comp?s.comp.ratio:1);
   set(n.comp.threshold,s.comp?s.comp.threshold:0);
   set(n.exGain.gain,Math.min(0.09*s.clarityAmt,0.18));
@@ -1238,9 +1261,13 @@ function estimateMakeupDb(s){
 }
 function updateLiveInfo(s){
   const el=$('liveInfo');
-  el.innerHTML=s.target===null
-    ?'音はそのまま・音割れ防止のみ<span class="li-sub">（ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>'
-    :'目標音圧 '+fmt1(s.target)+' LUFS ／ ピーク上限 '+fmt1(s.ceilDb)+' dBFS<span class="li-sub">（試聴は近似・保存時に精密調整）</span>';
+  if(s.presetKey==='enhance'){
+    el.innerHTML=(s.intensity<=0
+      ?'音質補正オフ・音割れ防止のみ<span class="li-sub">（音量そのまま／ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>'
+      :'音質補正 強度'+s.intensity+'%<span class="li-sub">（音量は元のまま／ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>');
+    return;
+  }
+  el.innerHTML='目標音圧 '+fmt1(s.target)+' LUFS ／ ピーク上限 '+fmt1(s.ceilDb)+' dBFS<span class="li-sub">（試聴は近似・保存時に精密調整）</span>';
 }
 
 /* 音量キャリブレーション: 曲中で最も大きい8秒をオフラインで通し、チェーンによる音圧変化を実測 */
