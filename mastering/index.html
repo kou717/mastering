@@ -182,6 +182,9 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 .intensity input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:2.5px solid var(--blue)}
 .intensity input:focus-visible{outline:2px solid var(--blue-hi);outline-offset:4px;border-radius:999px}
 .intensity .marks{display:flex;justify-content:space-between;font-size:11px;color:var(--mute);font-weight:700;margin-top:6px}
+.slider-wrap{position:relative}
+.rec-dot{position:absolute;top:-4px;left:75%;width:7px;height:7px;border-radius:50%;background:var(--blue-hi);box-shadow:0 0 8px rgba(90,166,255,.9);transform:translateX(-50%);pointer-events:none}
+.rec-dot[hidden]{display:none}
 
 /* clarity toggle */
 .clarity{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(180deg,rgba(16,25,44,.5),rgba(10,16,30,.6));padding:16px 18px;cursor:pointer;user-select:none;margin-top:14px}
@@ -493,7 +496,10 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     <div class="sec-label"><span class="step">3</span>適用の強さ</div>
     <div class="intensity" id="intensityBox">
       <div class="row"><span class="t">適用強度</span><span class="val" id="intVal">50%</span></div>
-      <input type="range" id="intensity" min="0" max="100" value="50" step="1" aria-label="適用強度">
+      <div class="slider-wrap">
+        <input type="range" id="intensity" min="0" max="100" value="50" step="1" aria-label="適用強度">
+        <span class="rec-dot" id="recDot" title="この曲のおすすめ" hidden></span>
+      </div>
       <div class="marks"><span id="markLeft">15% 控えめ</span><span>50% 標準</span><span>100% 最大</span></div>
     </div>
 
@@ -615,7 +621,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
       </details>
       <details>
         <summary>「高音質化」は何をしていますか？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
-        <div class="a">マスタリングエンジニアの定石に基づく5つの補正を、音量を変えずに行います。(1) 中低域のこもり取り（300Hz付近を軽くカット）(2) AI音源特有の4〜7kHzのシャリつき制御 (3) 高域のエア感（12kHzシェルフ）(4) サイド成分の低音をモノ化して低域を引き締め＋高域だけ広げるステレオ処理 (5) ごく浅いグルーコンプレッション（1.5:1・遅いアタック）。処理後は曲全体の音量を元と同じに自動調整するので、「大きくなったから良く聴こえる」錯覚なしに、純粋な音質の違いだけを聴き比べられます。なお失われた情報の復元ではなく、聴感を整える補正です。</div>
+        <div class="a">マスタリングエンジニアの定石に基づく5つの補正を、音量を変えずに行います。(1) 中低域のこもり取り（300Hz付近を軽くカット）(2) AI音源特有の4〜7kHzのシャリつき制御 (3) 高域のエア感（12kHzシェルフ）(4) サイド成分の低音をモノ化して低域を引き締め＋高域だけ広げるステレオ処理 (5) ごく浅いグルーコンプレッション（1.5:1・遅いアタック）。スライダー50%までは曲全体の音量を元と同じに自動調整するので、「大きくなったから良く聴こえる」錯覚なしに、純粋な音質の違いだけを聴き比べられます。50%を超えると補正はそのままに、音圧だけを配信基準（-14 LUFS）へ近づけます（元がそれ以上大きい曲は変えません）。スライダー上の小さな光点は、この曲でピークの潰れがほぼ出ない範囲まで音圧を上げられる「おすすめ位置」です。なお失われた情報の復元ではなく、聴感を整える補正です。</div>
       </details>
       <details>
         <summary>試聴の音と保存したファイルの音は同じですか？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
@@ -891,6 +897,8 @@ function prepareAdjustScreen(){
   else{note='配信基準より大きめです。';sub='音割れを防ぎつつ整えるのがおすすめです。';}
   $('ajNote').innerHTML=note+(sub?'<span class="note-sub"> '+sub+'</span>':'');
   hideExport();
+  computeRecPos();
+  applyPresetFloor();
   buildWaveCache();
   resetPlayerUI();
   renderQueue();
@@ -951,22 +959,31 @@ function resolveSettings(){
   let target=null,comp=null,exciterAmt=0,mud250Db=0,matchLoudness=false;
 
   if(presetKey==='enhance'){
-    /* ══ 高音質化 v2（リサーチ準拠の専用チューン） ══
-       音量は元のまま維持（ラウドネスマッチ）。0%＝無加工・音割れ防止のみ */
-    if(a>0){
+    /* ══ 高音質化 v2.1（2ゾーン仕様） ══
+       0〜50%: 補正量0→フル（音量は元のまま維持） / 50〜100%: 補正フル固定＋音圧を-14へ
+       0%＝無加工・音割れ防止のみ */
+    const c=Math.min(a*2,1);                       // 補正量（位置50でフル＝定石の適量）
+    if(c>0){
       eq.hp30=true;                                // サブソニック整理
-      eq.mud300=clamp(-1.8*a,-6,0);                // こもり取り: ~300Hz wide -1〜2dB（定石値）
-      eq.pk3k=clamp(0.8*a,0,EQ_BOOST_MAX);         // 明瞭度: 3kHz +0.5〜1dB
-      eq.harsh=clamp(-2.5*a,-6,0);                 // ハーシュ制御: 5.5kHz中心（AIの4〜7kHzフィズ）
-      eq.air=clamp(1.5*a,0,EQ_BOOST_MAX);          // エア: 12kHzシェルフ +1〜1.5dB
+      eq.mud300=clamp(-1.8*c,-6,0);                // こもり取り: ~300Hz wide -1〜2dB（定石値）
+      eq.pk3k=clamp(0.8*c,0,EQ_BOOST_MAX);         // 明瞭度: 3kHz +0.5〜1dB
+      eq.harsh=clamp(-2.5*c,-6,0);                 // ハーシュ制御: 5.5kHz中心（AIの4〜7kHzフィズ）
+      eq.air=clamp(1.5*c,0,EQ_BOOST_MAX);          // エア: 12kHzシェルフ +1〜1.5dB
       eq.airHz=12000;
-      comp={ratio:1+0.5*a,threshold:-16*a,attack:0.03,release:0.25,knee:10}; // グルー: 1.5:1・遅アタック
-      exciterAmt=0.7*a+(clarityOn?0.35:0);         // 軽い倍音付加
-      ms.hpfHz=20+90*a;                            // モノベース化: サイドHPF（100%で110Hz）
-      ms.gainDb=0.8*a+(clarityOn?0.5:0);           // サイド広帯域は控えめ
-      ms.shelfDb=clamp(1.2*a,0,2);                 // サイド高域シェルフ（〜1.2dB・2dB上限）
+      comp={ratio:1+0.5*c,threshold:-16*c,attack:0.03,release:0.25,knee:10}; // グルー: 1.5:1・遅アタック
+      exciterAmt=0.7*c+(clarityOn?0.35:0);         // 軽い倍音付加
+      ms.hpfHz=20+90*c;                            // モノベース化: サイドHPF（フルで110Hz）
+      ms.gainDb=0.8*c+(clarityOn?0.5:0);           // サイド広帯域は控えめ
+      ms.shelfDb=clamp(1.2*c,0,2);                 // サイド高域シェルフ（〜1.2dB・2dB上限）
       mud250Db=clarityOn?-0.8:0;                   // トグル併用時の追い濁り取り
-      matchLoudness=true;                          // 書き出し・試聴とも元のLUFSへ自動一致
+      // ＋音圧ゾーン: 元のLUFS→-14へ線形（元が-14以上の曲は下げない＝音量維持）
+      const gap=(S.origLufs===-Infinity)?0:(-14-S.origLufs);
+      if(intensity>50&&gap>0){
+        target=Math.min(S.origLufs+gap*Math.min((intensity-50)/50,1),TARGET_FLOOR);
+        matchLoudness=false;
+      }else{
+        matchLoudness=true;                        // 音量は元のまま（音量を揃えたA/B）
+      }
     }else{
       exciterAmt=clarityOn?0.35:0;
       ms.gainDb=clarityOn?0.5:0;
@@ -1013,8 +1030,23 @@ function sliderValue(){
   return Math.round(pos<=50?15+pos*0.7:pos);
 }
 function applyPresetFloor(){
-  const ml=$('markLeft');if(ml)ml.textContent=selectedPreset()==='enhance'?'0% 無加工':'15% 控えめ';
+  const enh=selectedPreset()==='enhance';
+  const ml=$('markLeft');if(ml)ml.textContent=enh?'0% 無加工':'15% 控えめ';
+  const dot=$('recDot');
+  if(dot)dot.hidden=!(enh&&S.recPos!==null&&S.recPos!==undefined);
   updateSliderUI();
+}
+// この曲のおすすめ位置（＋音圧ゾーン内で、ピークの削りが約2dB以内に収まる点）
+function computeRecPos(){
+  S.recPos=null;
+  if(S.origLufs===-Infinity)return;
+  const gap=-14-S.origLufs;                        // -14まで上げられる量
+  if(gap<=0)return;                                // すでに-14以上 → ＋音圧ゾーンは無効
+  const gSafe=2+CEILING_DB-S.origPeakDb;           // 削り2dB以内で積めるゲイン
+  const t=clamp(gSafe/gap,0,1);
+  S.recPos=Math.round(50+50*t);
+  const dot=$('recDot');
+  if(dot)dot.style.left=S.recPos+'%';
 }
 const intEl=$('intensity');
 function updateSliderUI(){
@@ -1023,7 +1055,9 @@ function updateSliderUI(){
 }
 intEl.addEventListener('input',()=>{
   let v=+intEl.value;
-  if(Math.abs(v-50)<=3&&v!==50){intEl.value=50;v=50;}   // 中央スナップ（detent）
+  const rec=(selectedPreset()==='enhance')?S.recPos:null;
+  if(rec!==null&&rec!==undefined&&Math.abs(v-rec)<=3&&v!==rec){intEl.value=rec;v=rec;} // 推奨点スナップ
+  else if(Math.abs(v-50)<=3&&v!==50){intEl.value=50;v=50;}   // 中央スナップ（detent）
   S.lastTouched='slider';
   updateSliderUI();
   applyLiveParams();
@@ -1311,9 +1345,15 @@ function estimateMakeupDb(s){
 function updateLiveInfo(s){
   const el=$('liveInfo');
   if(s.presetKey==='enhance'){
-    el.innerHTML=(s.intensity<=0
-      ?'音質補正オフ・音割れ防止のみ<span class="li-sub">（音量そのまま／ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>'
-      :'音質補正 強度'+s.intensity+'%・音量は元と同じに自動調整<span class="li-sub">（ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>');
+    const recMark=(S.recPos!==null&&S.recPos!==undefined&&s.intensity===S.recPos)?'★おすすめ・':'';
+    if(s.intensity<=0)
+      el.innerHTML='音質補正オフ・音割れ防止のみ<span class="li-sub">（音量そのまま／ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>';
+    else if(s.intensity<=50)
+      el.innerHTML='音質補正 '+(s.intensity*2)+'%・音量は元と同じに自動調整<span class="li-sub">（ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>';
+    else if(s.target!==null)
+      el.innerHTML=recMark+'音質補正100%＋音圧 目標 '+fmt1(s.target)+' LUFS<span class="li-sub">（ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>';
+    else
+      el.innerHTML='音質補正100%・音量は元と同じ<span class="li-sub">（この曲はすでに配信基準以上の音圧です）</span>';
     return;
   }
   el.innerHTML='目標音圧 '+fmt1(s.target)+' LUFS ／ ピーク上限 '+fmt1(s.ceilDb)+' dBFS<span class="li-sub">（試聴は近似・保存時に精密調整）</span>';
