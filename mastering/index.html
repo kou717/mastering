@@ -937,7 +937,7 @@ function selectedPreset(){const el=document.querySelector('input[name=preset]:ch
 // 現在のUI状態 → 処理パラメータ一式（試聴と書き出しで共通の唯一の情報源）
 function resolveSettings(){
   const presetKey=selectedPreset();
-  const intensity=+intEl.value;
+  const intensity=sliderValue();
   const k=intensity/50;                            // 味付けモード用（50%=1.0, 100%=2.0）
   const a=intensity/100;                           // 高音質化モード用（0〜1）
   const clarityOn=$('clarityToggle').checked;
@@ -1004,17 +1004,21 @@ document.querySelectorAll('input[name=preset]').forEach(r=>r.addEventListener('c
   applyPresetFloor();
   applyLiveParams();
 }));
-// 高音質化のみ0%まで、他モードは下限15%
+// スライダーは常に位置0〜100で動かし、位置→強度の変換で下限を実現する。
+// 味付けモード: 位置0→15%・位置50→50%（中央は必ず50）・位置100→100%
+// 高音質化: そのまま（位置0→0%＝無加工）
+function sliderValue(){
+  const pos=+intEl.value;
+  if(selectedPreset()==='enhance')return Math.round(pos);
+  return Math.round(pos<=50?15+pos*0.7:pos);
+}
 function applyPresetFloor(){
-  const enh=selectedPreset()==='enhance';
-  intEl.min=enh?0:15;
-  if(+intEl.value<+intEl.min){intEl.value=intEl.min;}
-  const ml=$('markLeft');if(ml)ml.textContent=enh?'0% 無加工':'15% 控えめ';
+  const ml=$('markLeft');if(ml)ml.textContent=selectedPreset()==='enhance'?'0% 無加工':'15% 控えめ';
   updateSliderUI();
 }
 const intEl=$('intensity');
 function updateSliderUI(){
-  $('intVal').textContent=intEl.value+'%';
+  $('intVal').textContent=sliderValue()+'%';
   intEl.style.setProperty('--fill',intEl.value+'%');
 }
 intEl.addEventListener('input',()=>{
