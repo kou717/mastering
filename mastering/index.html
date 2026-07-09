@@ -614,6 +614,10 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
         <div class="a">高域にごく軽い倍音を加え、こもりの原因になりやすい中低域をわずかに整理し、ステレオの広がりを少し足す補正です。AI生成音源で失われた音そのものを復元する機能ではなく、あくまで聴感を整える補正である点は正直に明記しておきます。効き具合は強度スライダーに連動します。</div>
       </details>
       <details>
+        <summary>「高音質化」は何をしていますか？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <div class="a">マスタリングエンジニアの定石に基づく5つの補正を、音量を変えずに行います。(1) 中低域のこもり取り（300Hz付近を軽くカット）(2) AI音源特有の4〜7kHzのシャリつき制御 (3) 高域のエア感（12kHzシェルフ）(4) サイド成分の低音をモノ化して低域を引き締め＋高域だけ広げるステレオ処理 (5) ごく浅いグルーコンプレッション（1.5:1・遅いアタック）。処理後は曲全体の音量を元と同じに自動調整するので、「大きくなったから良く聴こえる」錯覚なしに、純粋な音質の違いだけを聴き比べられます。なお失われた情報の復元ではなく、聴感を整える補正です。</div>
+      </details>
+      <details>
         <summary>試聴の音と保存したファイルの音は同じですか？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
         <div class="a">音色（EQ・コンプレッサー・クリアさ強化）は、試聴も保存もまったく同じ処理を同じ数値で通るため同一です。全体音量の合わせ込みだけは、試聴ではリアルタイム再生用の近似計算（曲中で最も大きい部分を使った自動補正つき）のため、保存ファイルとわずかな差が出る場合があります。保存時には曲全体を測定し直して音圧を正確に目標へ合わせ、ピーク上限（-1 dBFS）も厳密に保証します。</div>
       </details>
@@ -941,23 +945,35 @@ function resolveSettings(){
   const advCeil=parseFloat($('advCeil').value);
   if(!isNaN(advCeil))ceilDb=clamp(advCeil,-3,-1);
   const g=v=>clamp(v*k,-12,EQ_BOOST_MAX);
-  const eq={hp30:false,ls90:0,ls200:0,pk3k:0,hs8k:0,hs10k:0,harsh:0};
-  let target=null,comp=null,clarityAmt=0;
+  // 統一パラメータ空間（全モード共通・未使用はニュートラル）
+  const eq={hp30:false,ls90:0,ls200:0,mud300:0,pk3k:0,hs8k:0,air:0,airHz:10000,harsh:0};
+  const ms={hpfHz:0,gainDb:0,shelfDb:0};           // M/S: サイドHPF・広帯域・高域シェルフ
+  let target=null,comp=null,exciterAmt=0,mud250Db=0,matchLoudness=false;
 
   if(presetKey==='enhance'){
-    // 純粋な高音質化：音量は元のまま。粗取り＋分離感（強度0=無加工＝音割れ防止のみ）
+    /* ══ 高音質化 v2（リサーチ準拠の専用チューン） ══
+       音量は元のまま維持（ラウドネスマッチ）。0%＝無加工・音割れ防止のみ */
     if(a>0){
-      eq.hp30=true;                                // サブソニック整理（〜30Hz）
-      eq.pk3k=clamp(1.0*a,0,EQ_BOOST_MAX);         // 明瞭度（3kHz）
-      eq.harsh=clamp(-2.2*a,-6,0);                 // ハーシュ除去（6.8kHz）
-      eq.hs10k=clamp(2.5*a,0,EQ_BOOST_MAX);        // エア（高域の抜け）
-      clarityAmt=Math.min(2,1.2*a+(clarityOn?0.4:0)); // エキサイター＋濁り取り＋ステレオ幅
+      eq.hp30=true;                                // サブソニック整理
+      eq.mud300=clamp(-1.8*a,-6,0);                // こもり取り: ~300Hz wide -1〜2dB（定石値）
+      eq.pk3k=clamp(0.8*a,0,EQ_BOOST_MAX);         // 明瞭度: 3kHz +0.5〜1dB
+      eq.harsh=clamp(-2.5*a,-6,0);                 // ハーシュ制御: 5.5kHz中心（AIの4〜7kHzフィズ）
+      eq.air=clamp(1.5*a,0,EQ_BOOST_MAX);          // エア: 12kHzシェルフ +1〜1.5dB
+      eq.airHz=12000;
+      comp={ratio:1+0.5*a,threshold:-16*a,attack:0.03,release:0.25,knee:10}; // グルー: 1.5:1・遅アタック
+      exciterAmt=0.7*a+(clarityOn?0.35:0);         // 軽い倍音付加
+      ms.hpfHz=20+90*a;                            // モノベース化: サイドHPF（100%で110Hz）
+      ms.gainDb=0.8*a+(clarityOn?0.5:0);           // サイド広帯域は控えめ
+      ms.shelfDb=clamp(1.2*a,0,2);                 // サイド高域シェルフ（〜1.2dB・2dB上限）
+      mud250Db=clarityOn?-0.8:0;                   // トグル併用時の追い濁り取り
+      matchLoudness=true;                          // 書き出し・試聴とも元のLUFSへ自動一致
     }else{
-      clarityAmt=clarityOn?0.4:0;                  // 0%でもクリアさ強化トグルは併用可
+      exciterAmt=clarityOn?0.35:0;
+      ms.gainDb=clarityOn?0.5:0;
+      mud250Db=clarityOn?-0.8:0;
     }
-    target=null;                                   // 音量は変えない（ピークだけ天井保証）
   }else{
-    // 配信レベル調整＋味付け
+    /* ══ 配信レベル調整＋味付け ══ */
     const advL=parseFloat($('advLufs').value);
     if(S.lastTouched==='manual'&&!isNaN(advL)){
       target=clamp(advL,-24,TARGET_FLOOR);
@@ -969,16 +985,19 @@ function resolveSettings(){
     if(k>0){
       if(presetKey==='power')eq.ls90=g(3);
       else if(presetKey==='clear'){eq.hs8k=g(2);eq.pk3k=g(1.5);eq.hp30=true;}
-      else if(presetKey==='warm'){eq.hs10k=g(-2);eq.ls200=g(2);}
+      else if(presetKey==='warm'){eq.air=g(-2);eq.airHz=10000;eq.ls200=g(2);}
     }
     const pc=PRESETS[presetKey].comp;
-    if(pc&&k>0)comp={ratio:clamp(1+(pc.ratio-1)*k,1,20),threshold:clamp(pc.threshold*k,-60,0)};
-    clarityAmt=(clarityOn&&k>0)?Math.min(k,2):0;
+    if(pc&&k>0)comp={ratio:clamp(1+(pc.ratio-1)*k,1,20),threshold:clamp(pc.threshold*k,-60,0),attack:0.01,release:0.25,knee:6};
+    const clarityAmt=(clarityOn&&k>0)?Math.min(k,2):0;
+    exciterAmt=clarityAmt;
+    mud250Db=-2*clarityAmt;
+    ms.gainDb=clarityAmt>0?Math.min(1.5*clarityAmt,3):0;
   }
-  return {presetKey,intensity,k,target,ceilDb,ceil:dB2lin(ceilDb),eq,comp,clarityAmt};
+  return {presetKey,intensity,k,target,matchLoudness,ceilDb,ceil:dB2lin(ceilDb),eq,comp,exciterAmt,mud250Db,ms,clarityOn};
 }
-function settingsKey(s){return [s.presetKey,s.intensity,s.clarityAmt.toFixed(2),s.target===null?'n':s.target.toFixed(2),s.ceilDb].join('|');}
-function chainKey(s){return [s.presetKey,s.intensity,s.clarityAmt.toFixed(2)].join('|');}
+function settingsKey(s){return [s.presetKey,s.intensity,s.clarityOn?1:0,s.target===null?'n':s.target.toFixed(2),s.ceilDb].join('|');}
+function chainKey(s){return [s.presetKey,s.intensity,s.clarityOn?1:0].join('|');}
 
 /* UI操作 → 即時反映 */
 document.querySelectorAll('input[name=preset]').forEach(r=>r.addEventListener('change',()=>{
@@ -1023,32 +1042,36 @@ function buildOfflineChain(octx,src,s,nch,srcBuf){
   if(s.eq.hp30)mk('highpass',30);
   if(s.eq.ls90)mk('lowshelf',90,s.eq.ls90);
   if(s.eq.ls200)mk('lowshelf',200,s.eq.ls200);
+  if(s.eq.mud300)mk('peaking',300,s.eq.mud300,0.6);
   if(s.eq.pk3k)mk('peaking',3000,s.eq.pk3k,1.1);
   if(s.eq.hs8k)mk('highshelf',8000,s.eq.hs8k);
-  if(s.eq.hs10k)mk('highshelf',10000,s.eq.hs10k);
-  if(s.eq.harsh)mk('peaking',6800,s.eq.harsh,1.0);
+  if(s.eq.air)mk('highshelf',s.eq.airHz,s.eq.air);
+  if(s.eq.harsh)mk('peaking',5500,s.eq.harsh,1.2);
   if(s.comp){
     const c=octx.createDynamicsCompressor();
     c.ratio.value=s.comp.ratio;c.threshold.value=s.comp.threshold;
-    c.knee.value=6;c.attack.value=0.01;c.release.value=0.25;
+    c.knee.value=s.comp.knee;c.attack.value=s.comp.attack;c.release.value=s.comp.release;
     node.connect(c);node=c;
   }
-  if(s.clarityAmt>0)node=buildClarityChain(octx,node,s.clarityAmt,nch,srcBuf);
+  // エキサイター（軽い倍音付加・上限固定）
+  if(s.exciterAmt>0){
+    const sum=octx.createGain();sum.gain.value=1;
+    node.connect(sum);
+    const hp=octx.createBiquadFilter();hp.type='highpass';hp.frequency.value=3000;hp.Q.value=0.707;
+    const shaper=octx.createWaveShaper();shaper.curve=EXCITER_CURVE;shaper.oversample='2x';
+    const exGain=octx.createGain();exGain.gain.value=Math.min(0.09*s.exciterAmt,0.18);
+    node.connect(hp);hp.connect(shaper);shaper.connect(exGain);exGain.connect(sum);
+    node=sum;
+  }
+  if(s.mud250Db){
+    const mud=octx.createBiquadFilter();mud.type='peaking';mud.frequency.value=250;mud.Q.value=0.7;
+    mud.gain.value=s.mud250Db;
+    node.connect(mud);node=mud;
+  }
+  // M/S（サイドHPFによるモノベース化＋サイド高域シェルフ＋広帯域）
+  const msOn=s.ms&&(s.ms.hpfHz>0||s.ms.gainDb!==0||s.ms.shelfDb!==0);
+  if(msOn&&nch===2&&!isEffectivelyMono(srcBuf))node=buildWidener(octx,node,s.ms);
   return node;
-}
-/* C-2. クリアさ強化チェーン（オフライン用） */
-function buildClarityChain(octx,input,amt,nch,buf){
-  const sum=octx.createGain();sum.gain.value=1;
-  input.connect(sum);
-  const hp=octx.createBiquadFilter();hp.type='highpass';hp.frequency.value=3000;hp.Q.value=0.707;
-  const shaper=octx.createWaveShaper();shaper.curve=EXCITER_CURVE;shaper.oversample='2x';
-  const exGain=octx.createGain();exGain.gain.value=Math.min(0.09*amt,0.18);  // 歪みが聴こえる手前で上限固定
-  input.connect(hp);hp.connect(shaper);shaper.connect(exGain);exGain.connect(sum);
-  const mud=octx.createBiquadFilter();mud.type='peaking';mud.frequency.value=250;mud.Q.value=0.7;
-  mud.gain.value=-2*amt;
-  sum.connect(mud);
-  if(nch===2&&!isEffectivelyMono(buf))return buildWidener(octx,mud,dB2lin(Math.min(1.5*amt,3)));
-  return mud;
 }
 function isEffectivelyMono(buf){
   if(buf.numberOfChannels<2)return true;
@@ -1057,17 +1080,20 @@ function isEffectivelyMono(buf){
   for(let i=0;i<buf.length;i+=step)if(Math.abs(L[i]-R[i])>1e-4)return false;
   return true;
 }
-function buildWidener(octx,input,sideGain){
+function buildWidener(octx,input,ms){
   const split=octx.createChannelSplitter(2),merge=octx.createChannelMerger(2);
   input.connect(split);
   const mL=octx.createGain(),mR=octx.createGain();mL.gain.value=0.5;mR.gain.value=0.5;
   const sL=octx.createGain(),sR=octx.createGain();sL.gain.value=0.5;sR.gain.value=-0.5;
   split.connect(mL,0);split.connect(mR,1);      // M = 0.5L+0.5R
   split.connect(sL,0);split.connect(sR,1);      // S = 0.5L-0.5R
-  const m=octx.createGain(),s=octx.createGain();
+  const m=octx.createGain();
   mL.connect(m);mR.connect(m);
-  sL.connect(s);sR.connect(s);
-  s.gain.value=sideGain;
+  // サイド経路: HPF（モノベース化）→ 高域シェルフ → 広帯域ゲイン
+  const shp=octx.createBiquadFilter();shp.type='highpass';shp.frequency.value=ms.hpfHz>0?ms.hpfHz:5;shp.Q.value=0.707;
+  const ssh=octx.createBiquadFilter();ssh.type='highshelf';ssh.frequency.value=10000;ssh.gain.value=ms.shelfDb||0;
+  const s=octx.createGain();s.gain.value=dB2lin(ms.gainDb||0);
+  sL.connect(shp);sR.connect(shp);shp.connect(ssh);ssh.connect(s);
   const sInv=octx.createGain();sInv.gain.value=-1;s.connect(sInv);
   m.connect(merge,0,0);s.connect(merge,0,0);    // L' = M+S
   m.connect(merge,0,1);sInv.connect(merge,0,1); // R' = M-S
@@ -1175,8 +1201,9 @@ async function initLiveAudio(){
   // ── wet: EQ群（未使用バンドはニュートラル） ──
   n.hp30=BQ('highpass',5);
   n.ls90=BQ('lowshelf',90);n.ls200=BQ('lowshelf',200);
+  n.mud300=BQ('peaking',300,0.6);
   n.pk3k=BQ('peaking',3000,1.1);n.hs8k=BQ('highshelf',8000);n.hs10k=BQ('highshelf',10000);
-  n.harsh=BQ('peaking',6800,1.0);
+  n.harsh=BQ('peaking',5500,1.2);
   n.comp=ctx.createDynamicsCompressor();all.push(n.comp);
   n.comp.ratio.value=1;n.comp.threshold.value=0;n.comp.knee.value=6;n.comp.attack.value=0.01;n.comp.release.value=0.25;
   // ── クリアさ強化（常設・OFF時はニュートラル） ──
@@ -1198,7 +1225,7 @@ async function initLiveAudio(){
   }
   n.wet=G(1);
   // ── 配線 ──
-  const chain=[n.input,n.hp30,n.ls90,n.ls200,n.pk3k,n.hs8k,n.hs10k,n.harsh,n.comp];
+  const chain=[n.input,n.hp30,n.ls90,n.ls200,n.mud300,n.pk3k,n.hs8k,n.hs10k,n.harsh,n.comp];
   for(let i=0;i<chain.length-1;i++)chain[i].connect(chain[i+1]);
   n.comp.connect(n.claritySum);
   n.comp.connect(n.exHp);n.exHp.connect(n.exShaper);n.exShaper.connect(n.exGain);n.exGain.connect(n.claritySum);
@@ -1211,7 +1238,11 @@ async function initLiveAudio(){
     const mL=G(0.5),mR=G(0.5),sL=G(0.5),sR=G(-0.5);
     split.connect(mL,0);split.connect(mR,1);split.connect(sL,0);split.connect(sR,1);
     const m=G(1);n.sideGain=G(1);
-    mL.connect(m);mR.connect(m);sL.connect(n.sideGain);sR.connect(n.sideGain);
+    // サイド経路: HPF（モノベース化・ニュートラル5Hz）→ 高域シェルフ → 広帯域ゲイン
+    n.sideHpf=BQ('highpass',5);n.sideShelf=BQ('highshelf',10000);
+    mL.connect(m);mR.connect(m);
+    sL.connect(n.sideHpf);sR.connect(n.sideHpf);
+    n.sideHpf.connect(n.sideShelf);n.sideShelf.connect(n.sideGain);
     const sInv=G(-1);n.sideGain.connect(sInv);
     m.connect(merge,0,0);n.sideGain.connect(merge,0,0);
     m.connect(merge,0,1);sInv.connect(merge,0,1);
@@ -1237,13 +1268,22 @@ function applyLiveParams(){
   const set=(p,v)=>{p.setTargetAtTime(v,t,T);};
   set(n.hp30.frequency,s.eq.hp30?30:5);
   set(n.ls90.gain,s.eq.ls90);set(n.ls200.gain,s.eq.ls200);
-  set(n.pk3k.gain,s.eq.pk3k);set(n.hs8k.gain,s.eq.hs8k);set(n.hs10k.gain,s.eq.hs10k);
+  set(n.mud300.gain,s.eq.mud300);
+  set(n.pk3k.gain,s.eq.pk3k);set(n.hs8k.gain,s.eq.hs8k);
+  set(n.hs10k.frequency,s.eq.airHz);set(n.hs10k.gain,s.eq.air);
   set(n.harsh.gain,s.eq.harsh);
   set(n.comp.ratio,s.comp?s.comp.ratio:1);
   set(n.comp.threshold,s.comp?s.comp.threshold:0);
-  set(n.exGain.gain,Math.min(0.09*s.clarityAmt,0.18));
-  set(n.mud.gain,-2*s.clarityAmt);
-  if(n.sideGain)set(n.sideGain.gain,s.clarityAmt>0?dB2lin(Math.min(1.5*s.clarityAmt,3)):1);
+  set(n.comp.attack,s.comp?s.comp.attack:0.01);
+  set(n.comp.release,s.comp?s.comp.release:0.25);
+  set(n.comp.knee,s.comp?s.comp.knee:6);
+  set(n.exGain.gain,Math.min(0.09*s.exciterAmt,0.18));
+  set(n.mud.gain,s.mud250Db);
+  if(n.sideGain){
+    set(n.sideHpf.frequency,s.ms.hpfHz>0?s.ms.hpfHz:5);
+    set(n.sideShelf.gain,s.ms.shelfDb);
+    set(n.sideGain.gain,dB2lin(s.ms.gainDb));
+  }
   if(n.limiterCeil)set(n.limiterCeil,s.ceil);
   else if(n.fallbackCeilDb!==undefined&&n.fallbackCeilDb!==s.ceilDb){n.limiter.curve=clipCurve(s.ceil);n.fallbackCeilDb=s.ceilDb;}
   set(n.makeup.gain,dB2lin(estimateMakeupDb(s)));
@@ -1253,6 +1293,11 @@ function applyLiveParams(){
   if(typeof updateWaveTarget==='function'&&player.mode==='after')updateWaveTarget(true);
 }
 function estimateMakeupDb(s){
+  if(s.matchLoudness){
+    // 高音質化: 処理で変わった音圧を打ち消し、元のLUFSを維持（音量を揃えたA/Bの原則）
+    const d=live.calCache[chainKey(s)];
+    return d!==undefined?clamp(-d,-12,12):0;
+  }
   if(s.target===null)return S.origPeakDb>s.ceilDb?s.ceilDb-S.origPeakDb:0;
   if(S.origLufs===-Infinity)return 0;
   const d=live.calCache[chainKey(s)];
@@ -1264,7 +1309,7 @@ function updateLiveInfo(s){
   if(s.presetKey==='enhance'){
     el.innerHTML=(s.intensity<=0
       ?'音質補正オフ・音割れ防止のみ<span class="li-sub">（音量そのまま／ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>'
-      :'音質補正 強度'+s.intensity+'%<span class="li-sub">（音量は元のまま／ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>');
+      :'音質補正 強度'+s.intensity+'%・音量は元と同じに自動調整<span class="li-sub">（ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>');
     return;
   }
   el.innerHTML='目標音圧 '+fmt1(s.target)+' LUFS ／ ピーク上限 '+fmt1(s.ceilDb)+' dBFS<span class="li-sub">（試聴は近似・保存時に精密調整）</span>';
@@ -1273,7 +1318,7 @@ function updateLiveInfo(s){
 /* 音量キャリブレーション: 曲中で最も大きい8秒をオフラインで通し、チェーンによる音圧変化を実測 */
 let calTimer=0;
 function scheduleCalibration(s){
-  if(s.target===null||!S.buffer)return;
+  if((s.target===null&&!s.matchLoudness)||!S.buffer)return;
   if(live.calCache[chainKey(s)]!==undefined)return;
   clearTimeout(calTimer);
   calTimer=setTimeout(()=>{runCalibration();},250);
@@ -1282,7 +1327,7 @@ async function runCalibration(){
   const buf=S.buffer;
   if(!buf||!live.nodes)return;
   const s=resolveSettings(),ck=chainKey(s);
-  if(s.target===null||live.calCache[ck]!==undefined)return;
+  if((s.target===null&&!s.matchLoudness)||live.calCache[ck]!==undefined)return;
   const seq=++live.calSeq;
   try{
     const seg=getSegmentBuffer();
@@ -1298,7 +1343,7 @@ async function runCalibration(){
     live.calCache[ck]=l-live.segOrigLufs;
     // 現在の設定がまだ同じチェーンなら音量をなめらかに補正
     const cur=resolveSettings();
-    if(chainKey(cur)===ck&&cur.target!==null&&live.nodes)
+    if(chainKey(cur)===ck&&(cur.target!==null||cur.matchLoudness)&&live.nodes)
       live.nodes.makeup.gain.setTargetAtTime(dB2lin(estimateMakeupDb(cur)),audioCtx().currentTime,0.15);
     if(typeof updateWaveTarget==='function'&&player.mode==='after')updateWaveTarget(true);
   }catch(e){}
@@ -1334,6 +1379,8 @@ async function exportMastering(){
   setProcProgress(4,'ブラウザ内で処理中…');
   try{
     const s=resolveSettings();
+    // 高音質化＝元のLUFSへ一致（音量を揃えたA/Bの原則）。それ以外は目標LUFSへ
+    const effTarget=s.matchLoudness?(S.origLufs===-Infinity?null:S.origLufs):s.target;
     const buf=S.buffer,fs=buf.sampleRate,nch=buf.numberOfChannels,len=buf.length;
 
     /* 1) EQ・コンプ・クリアさ強化をオフラインで適用 */
@@ -1349,7 +1396,7 @@ async function exportMastering(){
     /* 2) 処理後ラウドネス測定 → ゲイン算出 */
     const chans=[];for(let c=0;c<nch;c++)chans.push(rendered.getChannelData(c));
     let gain;
-    if(s.target===null){
+    if(effTarget===null){
       // そのまま整える: ピークが天井を超える場合のみ下げる
       let p=0;for(const ch of chans){for(let i=0;i<len;i+=4){const a=Math.abs(ch[i]);if(a>p)p=a;}}
       if(p>s.ceil*0.9){p=0;for(const ch of chans){for(let i=0;i<len;i++){const a=Math.abs(ch[i]);if(a>p)p=a;}}}
@@ -1357,14 +1404,14 @@ async function exportMastering(){
       setProcProgress(66);
     }else{
       const m=await measureLoudness(rendered,f=>setProcProgress(40+f*26));
-      gain=(m.lufs===-Infinity)?1:dB2lin(s.target-m.lufs);
+      gain=(m.lufs===-Infinity)?1:dB2lin(effTarget-m.lufs);
     }
 
     /* 3) ゲイン適用 + ルックアヘッドリミッター（±1LU補正つき） */
     let out=await applyGainAndLimit(chans,fs,gain,s.ceil,f=>setProcProgress(66+f*22));
     let final=await measureLoudness(makeBuffer(out,fs,len),f=>setProcProgress(88+f*8));
-    if(s.target!==null&&final.lufs!==-Infinity&&Math.abs(final.lufs-s.target)>0.4){
-      gain*=dB2lin(clamp(s.target-final.lufs,-3,3));
+    if(effTarget!==null&&final.lufs!==-Infinity&&Math.abs(final.lufs-effTarget)>0.4){
+      gain*=dB2lin(clamp(effTarget-final.lufs,-3,3));
       out=await applyGainAndLimit(chans,fs,gain,s.ceil,f=>setProcProgress(88+f*6));
       final=await measureLoudness(makeBuffer(out,fs,len),f=>setProcProgress(94+f*4));
     }
