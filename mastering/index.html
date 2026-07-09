@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sunoの曲を無料でマスタリング｜音圧を配信基準に - OTOTOOLS</title>
-<meta name="description" content="Suno等のAI音楽の音圧（LUFS）をブラウザ内で配信基準にマスタリング。ファイルは一切送信されません。無料・登録不要。">
+<title>音磨き -OtoMigaki-｜AIの曲を無料でマスタリング・音圧を配信基準に | OTOTOOLS</title>
+<meta name="description" content="音磨き -OtoMigaki-：Suno・UdioなどAIで作った曲や手持ちの音源を、ブラウザ内で高音質化＆配信基準の音圧（LUFS）にマスタリング。ファイルは一切送信されません。無料・登録不要。">
 <style>
 :root{
   --bg:#04060d;--bg2:#070b16;
@@ -61,8 +61,11 @@ svg{display:block}
 @keyframes riseIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
 /* ── ③ hero ── */
-.hero{padding:46px 0 8px;text-align:center}
+.hero{padding:42px 0 8px;text-align:center}
+.brand-eyebrow{font-size:15px;font-weight:800;letter-spacing:.14em;color:var(--blue-hi);margin-bottom:14px}
+.brand-eyebrow span{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--mute);margin-left:6px}
 h1{font-size:clamp(23px,5.4vw,34px);line-height:1.4;font-weight:800;letter-spacing:.01em;text-wrap:balance}
+h1 .nb{display:inline-block}
 h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);margin-top:8px}
 .hero-sub{margin-top:14px;color:var(--mute);font-size:14.5px}
 .trust-badge{display:inline-flex;align-items:center;gap:8px;margin-top:20px;background:rgba(45,131,255,.1);border:1px solid rgba(90,166,255,.28);color:var(--blue-hi);border-radius:999px;padding:8px 18px;font-size:13px;font-weight:700}
@@ -373,7 +376,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div class="nav-menu" role="menu">
-        <a href="/mastering/" role="menuitem">マスタリング（音圧調整）<span class="now">公開中</span></a>
+        <a href="/mastering/" role="menuitem">音磨き（マスタリング）<span class="now">公開中</span></a>
         <span role="menuitem">WAV/MP3変換<span class="soon">準備中</span></span>
         <span role="menuitem">歌詞ふりがな<span class="soon">準備中</span></span>
         <span role="menuitem">フェード・無音カット<span class="soon">準備中</span></span>
@@ -393,8 +396,9 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
   <!-- ═══ 画面1：アップロード ═══ -->
   <section class="screen active" id="screen-upload" data-screen="upload">
     <div class="hero">
-      <h1>Sunoの曲を無料でマスタリング<span class="thin">音圧を配信基準（LUFS）に自動調整</span></h1>
-      <p class="hero-sub">AIで作った曲をドロップするだけ。YouTube・Spotify基準の音圧に整えてWAV/MP3で保存できます。</p>
+      <div class="brand-eyebrow">音磨き <span>-OtoMigaki-</span></div>
+      <h1><span class="nb">AIで作った曲を</span><span class="nb">無料でマスタリング</span><span class="thin">高音質化＆音圧を配信基準（LUFS）に自動調整</span></h1>
+      <p class="hero-sub">Suno・UdioなどのAI曲はもちろん、どんな音源もOK。ドロップするだけでYouTube・Spotify基準に整えてWAV/MP3で保存できます。</p>
       <div class="trust-badge">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
         ブラウザ完結・ファイルは送信されません
@@ -574,7 +578,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
   <!-- ⑪ 解説テキスト -->
   <article class="article" id="article">
     <h2>使い方 — 3ステップで完了します</h2>
-    <p>本ツールは、SunoなどのAI音楽サービスで作成した楽曲を、YouTubeやSpotifyといった配信プラットフォームの基準に合った音圧（ラウドネス）へ自動調整する無料のマスタリングツールです。専門知識や数値の入力は一切不要で、操作は次の3ステップだけです。</p>
+    <p>「音磨き -OtoMigaki-」は、SunoやUdioなどのAI音楽サービスで作成した楽曲をはじめ、あらゆる音源をYouTubeやSpotifyといった配信プラットフォームの基準に合った音圧（ラウドネス）へ自動調整し、聴感を磨き上げる無料のマスタリングツールです。専門知識や数値の入力は一切不要で、操作は次の3ステップだけです。</p>
     <ol class="steps">
       <li><b>曲をドロップする。</b>ページ上部の枠に音声ファイル（MP3 / WAV / FLAC / OGG、15分まで）をドラッグ＆ドロップするか、「ファイルを選ぶ」ボタンから選択します。スマートフォンではボタンをタップしてファイルを選んでください。読み込むとすぐに解析が始まり、曲の現在のラウドネスとピーク値が表示されます。</li>
       <li><b>聴きながら仕上がりを選ぶ。</b>解析が終わると試聴画面に切り替わります。曲を再生しながら「高音質化」「配信基準」「迫力」「クリア」「ウォーム」のボタンを切り替えると、その場で音が変わります。「処理前」ボタンを押せばいつでも元の音と聴き比べられ、適用強度スライダーの変化もリアルタイムに反映されます（まずは標準の50%がおすすめです）。</li>
@@ -648,7 +652,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
       <a href="#">運営者情報</a>
       <a href="#">お問い合わせ</a>
     </nav>
-    <div class="copy">© 2026 OTOTOOLS — すべての処理はブラウザ内で完結します</div>
+    <div class="copy">音磨き -OtoMigaki- © 2026 OTOTOOLS — すべての処理はブラウザ内で完結します</div>
   </div>
 </footer>
 <script>
