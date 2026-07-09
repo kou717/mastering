@@ -494,7 +494,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     <div class="intensity" id="intensityBox">
       <div class="row"><span class="t">適用強度</span><span class="val" id="intVal">50%</span></div>
       <input type="range" id="intensity" min="0" max="100" value="50" step="1" aria-label="適用強度">
-      <div class="marks"><span id="markLeft">15% 控えめ</span><span>50% 標準</span><span>100% 最大</span></div>
+      <div class="marks"><span id="markLeft">15% 控えめ</span><span id="markMid">50% 標準</span><span id="markRight">100% 最大</span></div>
     </div>
 
     <!-- クリアさ強化トグル -->
@@ -1009,7 +1009,10 @@ function applyPresetFloor(){
   const enh=selectedPreset()==='enhance';
   intEl.min=enh?0:15;
   if(+intEl.value<+intEl.min){intEl.value=intEl.min;}
-  const ml=$('markLeft');if(ml)ml.textContent=enh?'0% 無加工':'15% 控えめ';
+  // 高音質化は100%＝定石の適量（推奨）。味付けモードは50%＝標準
+  $('markLeft').textContent=enh?'0% 無加工':'15% 控えめ';
+  $('markMid').textContent=enh?'50% 控えめ':'50% 標準';
+  $('markRight').textContent=enh?'100% 標準・推奨':'100% 最大';
   updateSliderUI();
 }
 const intEl=$('intensity');
