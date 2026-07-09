@@ -438,11 +438,11 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     <div class="stats" id="analysisCard">
       <div class="stat lufs">
         <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="#4d95ff" stroke-width="2" stroke-linecap="round"><path d="M4 14v3M8 10v7M12 6v11M16 12v5M20 9v4"/></svg></span>
-        <span class="meta"><span class="val"><span class="num" id="ajLufs">—<small>LUFS</small></span></span><span class="cap">ラウドネス（音圧）</span></span>
+        <span class="meta"><span class="val"><span class="num" id="ajLufs">—<small>LUFS</small></span></span><span class="cap" id="ajLufsCap">ラウドネス（音圧）</span></span>
       </div>
       <div class="stat peak">
         <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2.5-6 4 13 2.5-9 2 4H21"/></svg></span>
-        <span class="meta"><span class="val"><span class="num" id="ajPeak">—<small>dBFS</small></span></span><span class="cap">ピーク</span></span>
+        <span class="meta"><span class="val"><span class="num" id="ajPeak">—<small>dBFS</small></span></span><span class="cap" id="ajPeakCap">ピーク</span></span>
       </div>
     </div>
     <div class="analysis-note" id="ajNote">—</div>
@@ -884,7 +884,11 @@ function drawProgressWave(cv,peaks,frac,color){
 function prepareAdjustScreen(){
   $('ajFname').textContent=S.fileName;
   $('ajLufs').innerHTML=(S.origLufs===-Infinity?'−∞':fmt1(S.origLufs))+'<small>LUFS</small>';
+  $('ajLufs').dataset.cur=(S.origLufs===-Infinity?'':S.origLufs);
   $('ajPeak').innerHTML=fmt1(S.origPeakDb)+'<small>dBFS</small>';
+  $('ajPeak').dataset.cur=S.origPeakDb;
+  $('ajLufsCap').textContent='音圧（元 '+(S.origLufs===-Infinity?'−∞':fmt1(S.origLufs))+'）';
+  $('ajPeakCap').textContent='ピーク（元 '+fmt1(S.origPeakDb)+'）';
   const d=S.origLufs-(-14);
   let note,sub='';
   if(S.origLufs===-Infinity)note='無音に近いファイルのようです。';
@@ -1296,6 +1300,38 @@ async function initLiveAudio(){
   applyABMode(true);
 }
 
+/* 現在の設定で書き出した場合の予測値 → 上部カードへアニメーション表示 */
+function predictedOutput(s){
+  if(S.origLufs===-Infinity)return{lufs:-Infinity,peak:Math.min(S.origPeakDb,s.ceilDb)};
+  let lufs;
+  if(s.matchLoudness)lufs=S.origLufs;                    // 元の音量を維持
+  else if(s.target!==null)lufs=s.target;                 // 目標LUFSへ一致
+  else lufs=S.origLufs+(S.origPeakDb>s.ceilDb?s.ceilDb-S.origPeakDb:0); // 音割れ防止のみ
+  const peak=Math.min(S.origPeakDb+(lufs-S.origLufs),s.ceilDb);
+  return{lufs,peak};
+}
+function animateStat(el,to,unit){
+  if(!isFinite(to)){el.innerHTML='−∞<small>'+unit+'</small>';el.dataset.cur='';return;}
+  const from=parseFloat(el.dataset.cur);
+  el.dataset.cur=to;
+  if(el._raf)cancelAnimationFrame(el._raf);
+  if(!isFinite(from)||Math.abs(from-to)<0.05||reducedMotion()){
+    el.innerHTML=fmt1(to)+'<small>'+unit+'</small>';el._raf=0;return;
+  }
+  const t0=performance.now(),dur=650;
+  const step=now=>{
+    const t=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-t,3);   // ease-out
+    el.innerHTML=fmt1(from+(to-from)*e)+'<small>'+unit+'</small>';
+    el._raf=t<1?requestAnimationFrame(step):0;
+  };
+  el._raf=requestAnimationFrame(step);
+}
+function updatePredictedStats(s){
+  const p=predictedOutput(s);
+  animateStat($('ajLufs'),p.lufs,'LUFS');
+  animateStat($('ajPeak'),p.peak,'dBFS');
+}
+
 /* 設定変更を試聴グラフへ即時反映 */
 function applyLiveParams(){
   if(!live.nodes||!S.buffer)return;
@@ -1323,6 +1359,7 @@ function applyLiveParams(){
   else if(n.fallbackCeilDb!==undefined&&n.fallbackCeilDb!==s.ceilDb){n.limiter.curve=clipCurve(s.ceil);n.fallbackCeilDb=s.ceilDb;}
   set(n.makeup.gain,dB2lin(estimateMakeupDb(s)));
   updateLiveInfo(s);
+  updatePredictedStats(s);
   scheduleCalibration(s);
   markExportStale();
   if(typeof updateWaveTarget==='function'&&player.mode==='after')updateWaveTarget(true);
