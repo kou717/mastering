@@ -295,6 +295,40 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 .faq .a{padding:2px 18px 16px 52px;font-size:13.5px;color:var(--ink2)}
 .disclaimer{margin:26px 0 0;background:rgba(120,158,224,.06);border:1px solid var(--line-soft);border-radius:14px;padding:16px 20px;font-size:12.5px;color:var(--mute)}
 .disclaimer b{color:var(--ink2)}
+/* 使い方：3ステップのビジュアル */
+.howto{display:flex;align-items:stretch;gap:6px;margin:16px 0 12px}
+.hstep{flex:1;background:linear-gradient(180deg,rgba(16,26,46,.5),rgba(9,15,28,.6));border:1px solid var(--line);border-radius:14px;padding:16px 8px 13px;text-align:center}
+.hicon{width:30px;height:30px;margin:0 auto 8px;color:var(--blue-hi)}
+.hicon svg{width:30px;height:30px}
+.ht{font-size:14px;font-weight:800}
+.hd{font-size:11px;color:var(--mute);margin-top:3px}
+.harrow{align-self:center;color:var(--mute2);font-size:20px;font-weight:700;flex:none}
+/* LUFS：正規化のビジュアル */
+.viz-lead{text-align:center}
+.viz-lead b{color:var(--blue-hi)}
+.viz-tail{text-align:center;font-weight:700;color:var(--ink)}
+.lufs-viz{display:flex;gap:8px;margin:16px 0 12px}
+.lcol{flex:1;background:linear-gradient(180deg,rgba(16,26,46,.5),rgba(9,15,28,.6));border:1px solid var(--line);border-radius:14px;padding:14px 8px 11px;text-align:center}
+.lcol.good{border-color:rgba(60,120,240,.4)}
+.lbars{display:flex;align-items:flex-end;justify-content:center;gap:7px;height:86px}
+.lbar{width:22%;height:var(--h,50%);border-radius:5px 5px 2px 2px;background:#5a667e}
+.lbar.dim{opacity:.55}
+.lbar.blue{background:linear-gradient(180deg,#5aa6ff,#1f6cf1);box-shadow:0 0 12px -2px rgba(45,131,255,.6)}
+.lbar.warn{background:linear-gradient(180deg,#f5a55f,#e0641f)}
+.lbar.squash{border-radius:2px;position:relative}
+.lbar.squash::before{content:"";position:absolute;top:0;left:-3px;right:-3px;height:3px;background:#ffd9b8;border-radius:2px}
+.larw{color:var(--mute2);font-size:15px;font-weight:700;align-self:center}
+.ll{font-size:11px;color:var(--mute);margin-top:9px;line-height:1.5}
+.ll b{display:block;color:var(--ink2);font-size:11.5px}
+/* 折りたたみ（詳しく読む） */
+.fold{background:linear-gradient(180deg,rgba(16,26,46,.42),rgba(9,15,28,.55));border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:12px 0}
+.fold summary{list-style:none;cursor:pointer;padding:13px 18px;font-size:13.5px;font-weight:700;color:#aab6cc;display:flex;gap:10px;align-items:center;transition:background .2s ease}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary:hover{background:rgba(120,158,224,.06)}
+.fold summary svg{width:12px;height:12px;margin-left:auto;flex:none;transition:transform .3s var(--ease);color:var(--mute)}
+.fold[open] summary svg{transform:rotate(180deg)}
+.fold .a{padding:4px 18px 16px;font-size:13.5px;color:var(--ink2)}
+.fold .a p{font-size:13.5px}
 
 /* ── footer ── */
 .site-footer{margin-top:70px;border-top:1px solid var(--line);padding:34px 0 46px;text-align:center}
@@ -577,24 +611,62 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
   </section>
   <!-- ⑪ 解説テキスト -->
   <article class="article" id="article">
-    <h2>使い方 — 3ステップで完了します</h2>
-    <p>「音磨き -OtoMigaki-」は、SunoやUdioなどのAI音楽サービスで作成した楽曲をはじめ、あらゆる音源をYouTubeやSpotifyといった配信プラットフォームの基準に合った音圧（ラウドネス）へ自動調整し、聴感を磨き上げる無料のマスタリングツールです。専門知識や数値の入力は一切不要で、操作は次の3ステップだけです。</p>
-    <ol class="steps">
+    <h2>使い方</h2>
+    <div class="howto">
+      <div class="hstep">
+        <div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 16v2.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V16"/></svg></div>
+        <div class="ht">曲を入れる</div><div class="hd">ドロップでOK</div>
+      </div>
+      <div class="harrow">›</div>
+      <div class="hstep">
+        <div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h9M4 17h5M15 12h5M11 12H4"/><circle cx="16" cy="7" r="2.4"/><circle cx="12" cy="17" r="2.4"/><circle cx="8.5" cy="12" r="2.4"/></svg></div>
+        <div class="ht">聴いて選ぶ</div><div class="hd">モード切替</div>
+      </div>
+      <div class="harrow">›</div>
+      <div class="hstep">
+        <div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div>
+        <div class="ht">保存する</div><div class="hd">WAV / MP3</div>
+      </div>
+    </div>
+    <details class="fold">
+      <summary>くわしい手順を読む<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="a"><ol class="steps">
       <li><b>曲をドロップする。</b>ページ上部の枠に音声ファイル（MP3 / WAV / FLAC / OGG、15分まで）をドラッグ＆ドロップするか、「ファイルを選ぶ」ボタンから選択します。スマートフォンではボタンをタップしてファイルを選んでください。読み込むとすぐに解析が始まり、曲の現在のラウドネスとピーク値が表示されます。</li>
       <li><b>聴きながら仕上がりを選ぶ。</b>解析が終わると試聴画面に切り替わります。曲を再生しながら「高音質化」「配信基準」「迫力」「クリア」「ウォーム」のボタンを切り替えると、その場で音が変わります。「処理前」ボタンを押せばいつでも元の音と聴き比べられ、適用強度スライダーの変化もリアルタイムに反映されます（まずは標準の50%がおすすめです）。</li>
       <li><b>書き出して保存する。</b>好みの設定が決まったら「マスタリング開始」を押します。数秒で正確な音圧合わせと音割れ防止リミッター（天井 -1 dBFS）を適用した完成ファイルができあがり、WAV（推奨）またはMP3でダウンロードできます。書き出し後に設定を変えた場合は、もう一度ボタンを押せば最新の設定で作り直せます。</li>
-    </ol>
+    </ol></div>
+    </details>
 
-    <h2>LUFSとは？ なぜ「-14 LUFS」を目指すのか</h2>
+    <h2>なぜ「-14」に合わせるの？</h2>
+    <p class="viz-lead">YouTubeもSpotifyも、再生時にどの曲も<b>同じ音量（約-14 LUFS）</b>に揃えます。だから——</p>
+    <div class="lufs-viz">
+      <div class="lcol">
+        <div class="lbars"><span class="lbar" style="--h:34%"></span><span class="larw">›</span><span class="lbar dim" style="--h:34%"></span></div>
+        <div class="ll">小さい曲<b>小さいまま…損</b></div>
+      </div>
+      <div class="lcol good">
+        <div class="lbars"><span class="lbar blue" style="--h:62%"></span><span class="larw">›</span><span class="lbar blue" style="--h:62%"></span></div>
+        <div class="ll">-14の曲<b>そのまま届く◎</b></div>
+      </div>
+      <div class="lcol bad">
+        <div class="lbars"><span class="lbar warn squash" style="--h:92%"></span><span class="larw">›</span><span class="lbar warn squash" style="--h:62%"></span></div>
+        <div class="ll">大きすぎる曲<b>下げられて損</b></div>
+      </div>
+    </div>
+    <p class="viz-tail">「-14に合わせる」が一番おトク。このツールはワンタップでそこへ合わせます。</p>
+    <details class="fold">
+      <summary>もっと詳しく（LUFSとは？）<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="a">
     <p>LUFS（Loudness Units relative to Full Scale）は、人間の耳が感じる「音の大きさ」を数値化した国際規格（ITU-R BS.1770）の単位です。瞬間的な波形の高さを示すピーク値と違い、曲全体を通してどれくらい大きく聴こえるかを表します。数値が0に近いほど大きく、例えば -8 LUFSはかなり音圧が高い状態、-20 LUFSはかなり静かな状態です。</p>
     <p>現在、YouTubeやSpotify、Apple Musicなどの主要な配信プラットフォームは「ラウドネスノーマライゼーション」という仕組みを導入しています。これは、音圧の大きい曲は自動的に音量を下げ、リスナーがどの曲を聴いてもほぼ同じ音量に揃える仕組みです。その基準値がおおむね -14 LUFS 前後（YouTube・Spotifyともに約-14）とされています。</p>
     <p>ここで重要なのは、Sunoなどが書き出す楽曲は -16〜-20 LUFS程度と、基準より小さめであることが多い点です。基準より小さい曲は、他の曲と並んだときに「なんだか迫力がない」「音が細い」と感じられてしまいます。逆に基準を大きく超えても、プラットフォーム側で音量を下げられるうえ、音の潰れ（歪み）だけが残って損をします。だからこそ「基準にぴったり合わせる」ことに意味があり、本ツールの「配信基準」プリセットは -14 LUFSへ、音割れを防ぐリミッター（天井 -1 dBFS）をかけながら自動調整します。</p>
     <p>なお、すべての処理はWeb Audio APIを使ってお使いのブラウザの中だけで行われます。音声ファイルがサーバーへアップロードされることは一切ありません。通信が発生しないため処理も高速で、プライバシーの心配もありません。</p>
-
+      </div>
+    </details>
     <!-- 広告枠C（記事中） -->
     <!-- AD-C -->
 
-    <h2>よくある質問（FAQ）</h2>
+    <h2>よくある質問</h2>
     <div class="faq">
       <details>
         <summary>ファイルはアップロードされますか？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
