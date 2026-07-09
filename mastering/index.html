@@ -403,7 +403,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="音声ファイルを選択またはドロップ">
       <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 16v2.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V16"/></svg>
       <div class="dz-main">ここに音声ファイルをドロップ</div>
-      <div class="dz-sub">3〜5分程度の楽曲・最大50MBまで／複数ファイル可</div>
+      <div class="dz-sub">〜15分の楽曲（WAV/FLAC 250MB・MP3/OGG 60MBまで）／複数ファイル可</div>
       <button type="button" class="dz-btn" id="dzBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M13 2v7h7"/></svg>
         ファイルを選ぶ
@@ -576,7 +576,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     <h2>使い方 — 3ステップで完了します</h2>
     <p>本ツールは、SunoなどのAI音楽サービスで作成した楽曲を、YouTubeやSpotifyといった配信プラットフォームの基準に合った音圧（ラウドネス）へ自動調整する無料のマスタリングツールです。専門知識や数値の入力は一切不要で、操作は次の3ステップだけです。</p>
     <ol class="steps">
-      <li><b>曲をドロップする。</b>ページ上部の枠に音声ファイル（MP3 / WAV / FLAC / OGG）をドラッグ＆ドロップするか、「ファイルを選ぶ」ボタンから選択します。スマートフォンではボタンをタップしてファイルを選んでください。読み込むとすぐに解析が始まり、曲の現在のラウドネスとピーク値が表示されます。</li>
+      <li><b>曲をドロップする。</b>ページ上部の枠に音声ファイル（MP3 / WAV / FLAC / OGG、15分まで）をドラッグ＆ドロップするか、「ファイルを選ぶ」ボタンから選択します。スマートフォンではボタンをタップしてファイルを選んでください。読み込むとすぐに解析が始まり、曲の現在のラウドネスとピーク値が表示されます。</li>
       <li><b>聴きながら仕上がりを選ぶ。</b>解析が終わると試聴画面に切り替わります。曲を再生しながら「高音質化」「配信基準」「迫力」「クリア」「ウォーム」のボタンを切り替えると、その場で音が変わります。「処理前」ボタンを押せばいつでも元の音と聴き比べられ、適用強度スライダーの変化もリアルタイムに反映されます（まずは標準の50%がおすすめです）。</li>
       <li><b>書き出して保存する。</b>好みの設定が決まったら「マスタリング開始」を押します。数秒で正確な音圧合わせと音割れ防止リミッター（天井 -1 dBFS）を適用した完成ファイルができあがり、WAV（推奨）またはMP3でダウンロードできます。書き出し後に設定を変えた場合は、もう一度ボタンを押せば最新の設定で作り直せます。</li>
     </ol>
@@ -711,7 +711,13 @@ document.addEventListener('click',e=>{
 document.querySelectorAll('[data-soon]').forEach(a=>a.addEventListener('click',e=>e.preventDefault()));
 
 /* ═══════════ ④ ファイル受け取り ═══════════ */
-const MAX_BYTES=55*1024*1024;
+// 上限は形式別: 非圧縮(WAV/FLAC等)はデコード後も膨らまないため大きく許可。
+// 圧縮(MP3/OGG)はデコード後に数十倍へ展開されるため控えめに（長さ15分の共通ガードあり）
+const MAX_UNCOMPRESSED=250*1024*1024;
+const MAX_COMPRESSED=60*1024*1024;
+function maxBytesFor(f){
+  return /\.(wav|flac|aif|aiff)$/i.test(f.name)?MAX_UNCOMPRESSED:MAX_COMPRESSED;
+}
 const dz=$('dropzone');
 function showError(msg){const el=$('errMsg');el.textContent=msg;el.classList.add('show');}
 function clearError(){$('errMsg').classList.remove('show');}
@@ -727,10 +733,10 @@ function handleFiles(list){
   clearError();
   const files=[...list].filter(f=>f.size>0);
   if(!files.length)return;
-  const tooBig=files.filter(f=>f.size>MAX_BYTES);
-  const ok=files.filter(f=>f.size<=MAX_BYTES);
-  if(tooBig.length&&!ok.length){showError('ファイルが大きすぎます（50MB程度までを推奨）');return;}
-  if(tooBig.length)showError('一部のファイルが大きすぎるためスキップしました（50MB程度まで）');
+  const tooBig=files.filter(f=>f.size>maxBytesFor(f));
+  const ok=files.filter(f=>f.size<=maxBytesFor(f));
+  if(tooBig.length&&!ok.length){showError('ファイルが大きすぎます（WAV/FLACは250MB・MP3/OGGは60MBまで）');return;}
+  if(tooBig.length)showError('一部のファイルが大きすぎるためスキップしました（WAV/FLAC 250MB・MP3/OGG 60MBまで）');
   S.files=ok;S.currentIndex=0;
   loadFile(0);
 }
