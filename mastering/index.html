@@ -183,8 +183,6 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 .intensity input:focus-visible{outline:2px solid var(--blue-hi);outline-offset:4px;border-radius:999px}
 .intensity .marks{display:flex;justify-content:space-between;font-size:11px;color:var(--mute);font-weight:700;margin-top:6px}
 .slider-wrap{position:relative}
-.rec-dot{position:absolute;top:-4px;left:75%;width:7px;height:7px;border-radius:50%;background:var(--blue-hi);box-shadow:0 0 8px rgba(90,166,255,.9);transform:translateX(-50%);pointer-events:none}
-.rec-dot[hidden]{display:none}
 
 /* clarity toggle */
 .clarity{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(180deg,rgba(16,25,44,.5),rgba(10,16,30,.6));padding:16px 18px;cursor:pointer;user-select:none;margin-top:14px}
@@ -498,7 +496,6 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
       <div class="row"><span class="t">適用強度</span><span class="val" id="intVal">50%</span></div>
       <div class="slider-wrap">
         <input type="range" id="intensity" min="0" max="100" value="50" step="1" aria-label="適用強度">
-        <span class="rec-dot" id="recDot" title="この曲のおすすめ" hidden></span>
       </div>
       <div class="marks"><span id="markLeft">15% 控えめ</span><span>50% 標準</span><span>100% 最大</span></div>
     </div>
@@ -621,7 +618,7 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
       </details>
       <details>
         <summary>「高音質化」は何をしていますか？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
-        <div class="a">マスタリングエンジニアの定石に基づく5つの補正を、音量を変えずに行います。(1) 中低域のこもり取り（300Hz付近を軽くカット）(2) AI音源特有の4〜7kHzのシャリつき制御 (3) 高域のエア感（12kHzシェルフ）(4) サイド成分の低音をモノ化して低域を引き締め＋高域だけ広げるステレオ処理 (5) ごく浅いグルーコンプレッション（1.5:1・遅いアタック）。スライダー50%までは曲全体の音量を元と同じに自動調整するので、「大きくなったから良く聴こえる」錯覚なしに、純粋な音質の違いだけを聴き比べられます。50%を超えると補正はそのままに、音圧だけを配信基準（-14 LUFS）へ近づけます（元がそれ以上大きい曲は変えません）。スライダー上の小さな光点は、この曲でピークの潰れがほぼ出ない範囲まで音圧を上げられる「おすすめ位置」です。なお失われた情報の復元ではなく、聴感を整える補正です。</div>
+        <div class="a">マスタリングエンジニアの定石に基づく5つの補正を、音量を変えずに行います。(1) 中低域のこもり取り（300Hz付近を軽くカット）(2) AI音源特有の4〜7kHzのシャリつき制御 (3) 高域のエア感（12kHzシェルフ）(4) サイド成分の低音をモノ化して低域を引き締め＋高域だけ広げるステレオ処理 (5) ごく浅いグルーコンプレッション（1.5:1・遅いアタック）。おすすめはスライダー中央の50%で、補正フル＋その曲で音の潰れがほぼ出ない上限（最大-14 LUFS）まで音圧を自動調整した「潰さない最高の状態」です。50%を超えると補正はそのままに、音圧を-10 LUFSまで押し込んでいきます（SNSやクラブ向けに密度を優先したい人向け。ピークの潰れと引き換えです）。元の曲がすでに大きい場合、音圧を下げることはありません。なお失われた情報の復元ではなく、聴感を整える補正です。</div>
       </details>
       <details>
         <summary>試聴の音と保存したファイルの音は同じですか？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
@@ -897,7 +894,6 @@ function prepareAdjustScreen(){
   else{note='配信基準より大きめです。';sub='音割れを防ぎつつ整えるのがおすすめです。';}
   $('ajNote').innerHTML=note+(sub?'<span class="note-sub"> '+sub+'</span>':'');
   hideExport();
-  computeRecPos();
   applyPresetFloor();
   buildWaveCache();
   resetPlayerUI();
@@ -976,13 +972,23 @@ function resolveSettings(){
       ms.gainDb=0.8*c+(clarityOn?0.5:0);           // サイド広帯域は控えめ
       ms.shelfDb=clamp(1.2*c,0,2);                 // サイド高域シェルフ（〜1.2dB・2dB上限）
       mud250Db=clarityOn?-0.8:0;                   // トグル併用時の追い濁り取り
-      // ＋音圧ゾーン: 元のLUFS→-14へ線形（元が-14以上の曲は下げない＝音量維持）
-      const gap=(S.origLufs===-Infinity)?0:(-14-S.origLufs);
-      if(intensity>50&&gap>0){
-        target=Math.min(S.origLufs+gap*Math.min((intensity-50)/50,1),TARGET_FLOOR);
-        matchLoudness=false;
+      // 音圧カーブ: 0〜50%で元→「潰れない上限」（削り約2dB以内・-14まで）、
+      //             50〜100%でさらに-10（迫力の常識ライン）へ。下げることはしない
+      if(S.origLufs===-Infinity){
+        matchLoudness=true;
       }else{
-        matchLoudness=true;                        // 音量は元のまま（音量を揃えたA/B）
+        const gSafe=2+CEILING_DB-S.origPeakDb;     // 削り2dB以内で積めるゲイン
+        const t50=Math.max(S.origLufs,Math.min(S.origLufs+gSafe,-14));
+        const t100=Math.max(S.origLufs,-10);
+        const tgt=intensity<=50
+          ? S.origLufs+(t50-S.origLufs)*(intensity/50)
+          : t50+(t100-t50)*Math.min((intensity-50)/50,1);
+        if(Math.abs(tgt-S.origLufs)<0.05){
+          matchLoudness=true;                      // 上げ幅なし → 元の音量を維持
+        }else{
+          target=Math.min(tgt,TARGET_FLOOR);
+          matchLoudness=false;
+        }
       }
     }else{
       exciterAmt=clarityOn?0.35:0;
@@ -1030,23 +1036,8 @@ function sliderValue(){
   return Math.round(pos<=50?15+pos*0.7:pos);
 }
 function applyPresetFloor(){
-  const enh=selectedPreset()==='enhance';
-  const ml=$('markLeft');if(ml)ml.textContent=enh?'0% 無加工':'15% 控えめ';
-  const dot=$('recDot');
-  if(dot)dot.hidden=!(enh&&S.recPos!==null&&S.recPos!==undefined);
+  const ml=$('markLeft');if(ml)ml.textContent=selectedPreset()==='enhance'?'0% 無加工':'15% 控えめ';
   updateSliderUI();
-}
-// この曲のおすすめ位置（＋音圧ゾーン内で、ピークの削りが約2dB以内に収まる点）
-function computeRecPos(){
-  S.recPos=null;
-  if(S.origLufs===-Infinity)return;
-  const gap=-14-S.origLufs;                        // -14まで上げられる量
-  if(gap<=0)return;                                // すでに-14以上 → ＋音圧ゾーンは無効
-  const gSafe=2+CEILING_DB-S.origPeakDb;           // 削り2dB以内で積めるゲイン
-  const t=clamp(gSafe/gap,0,1);
-  S.recPos=Math.round(50+50*t);
-  const dot=$('recDot');
-  if(dot)dot.style.left=S.recPos+'%';
 }
 const intEl=$('intensity');
 function updateSliderUI(){
@@ -1055,9 +1046,7 @@ function updateSliderUI(){
 }
 intEl.addEventListener('input',()=>{
   let v=+intEl.value;
-  const rec=(selectedPreset()==='enhance')?S.recPos:null;
-  if(rec!==null&&rec!==undefined&&Math.abs(v-rec)<=3&&v!==rec){intEl.value=rec;v=rec;} // 推奨点スナップ
-  else if(Math.abs(v-50)<=3&&v!==50){intEl.value=50;v=50;}   // 中央スナップ（detent）
+  if(Math.abs(v-50)<=3&&v!==50){intEl.value=50;v=50;}   // 中央スナップ（＝高音質化の推奨位置）
   S.lastTouched='slider';
   updateSliderUI();
   applyLiveParams();
@@ -1345,15 +1334,15 @@ function estimateMakeupDb(s){
 function updateLiveInfo(s){
   const el=$('liveInfo');
   if(s.presetKey==='enhance'){
-    const recMark=(S.recPos!==null&&S.recPos!==undefined&&s.intensity===S.recPos)?'★おすすめ・':'';
     if(s.intensity<=0)
       el.innerHTML='音質補正オフ・音割れ防止のみ<span class="li-sub">（音量そのまま／ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>';
     else if(s.intensity<=50)
-      el.innerHTML='音質補正 '+(s.intensity*2)+'%・音量は元と同じに自動調整<span class="li-sub">（ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>';
-    else if(s.target!==null)
-      el.innerHTML=recMark+'音質補正100%＋音圧 目標 '+fmt1(s.target)+' LUFS<span class="li-sub">（ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>';
+      el.innerHTML=(s.intensity===50?'★おすすめ・':'')+'音質補正 '+(s.intensity*2)+'%'
+        +(s.target!==null?'＋音圧 目標 '+fmt1(s.target)+' LUFS（潰れない安全域）':'・音量は元と同じ')
+        +'<span class="li-sub">（ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>';
     else
-      el.innerHTML='音質補正100%・音量は元と同じ<span class="li-sub">（この曲はすでに配信基準以上の音圧です）</span>';
+      el.innerHTML='音質補正100%＋音圧 '+(s.target!==null?'目標 '+fmt1(s.target)+' LUFS（強め・密度優先）':'音量は元と同じ（これ以上は上げません）')
+        +'<span class="li-sub">（ピーク上限 '+fmt1(s.ceilDb)+' dBFS）</span>';
     return;
   }
   el.innerHTML='目標音圧 '+fmt1(s.target)+' LUFS ／ ピーク上限 '+fmt1(s.ceilDb)+' dBFS<span class="li-sub">（試聴は近似・保存時に精密調整）</span>';
