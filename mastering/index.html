@@ -295,6 +295,8 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 .faq .a{padding:2px 18px 16px 52px;font-size:13.5px;color:var(--ink2)}
 .disclaimer{margin:26px 0 0;background:rgba(120,158,224,.06);border:1px solid var(--line-soft);border-radius:14px;padding:16px 20px;font-size:12.5px;color:var(--mute)}
 .disclaimer b{color:var(--ink2)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.art-img{width:100%;height:auto;display:block;border-radius:18px;border:1px solid var(--line-soft);margin:6px 0 12px;box-shadow:0 14px 40px -22px rgba(0,0,0,.7)}
 /* 使い方：3ステップ（ネオンポスター風） */
 .howto{position:relative;display:flex;align-items:stretch;gap:7px;margin:18px 0 12px}
 .howto::before{content:"";position:absolute;left:-4%;right:-4%;top:52%;height:44px;transform:translateY(-50%);
@@ -644,29 +646,9 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
   </section>
   <!-- ⑪ 解説テキスト -->
   <article class="article" id="article">
-    <h2>使い方</h2>
-    <div class="howto">
-      <div class="hstep c1">
-        <span class="hnum">01</span>
-        <span class="hcirc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5l5 5"/><path d="M4 16v2.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V16"/></svg></span>
-        <div class="ht">曲を入れる</div>
-        <div class="hd"><i></i>ドロップでOK<i></i></div>
-      </div>
-      <div class="harrow a1">›</div>
-      <div class="hstep c2">
-        <span class="hnum">02</span>
-        <span class="hcirc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M4 17h5M15 12h5M11 12H4"/><circle cx="16" cy="7" r="2.4"/><circle cx="12" cy="17" r="2.4"/><circle cx="8.5" cy="12" r="2.4"/></svg></span>
-        <div class="ht">聴いて選ぶ</div>
-        <div class="hd"><i></i>モード切替<i></i></div>
-      </div>
-      <div class="harrow a2">›</div>
-      <div class="hstep c3">
-        <span class="hnum">03</span>
-        <span class="hcirc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>
-        <div class="ht">保存する</div>
-        <div class="hd"><i></i>WAV / MP3<i></i></div>
-      </div>
-    </div>
+    <h2 class="sr-only">使い方</h2>
+    <img class="art-img" src="tool1.webp" width="1200" height="675" loading="lazy" decoding="async"
+      alt="使い方：01 曲を入れる（ドロップでOK）→ 02 聴いて選ぶ（モード切替）→ 03 保存する（WAV / MP3）">
     <details class="fold">
       <summary>くわしい手順を読む<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="a"><ol class="steps">
@@ -676,24 +658,9 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     </ol></div>
     </details>
 
-    <h2 class="why-h">なぜ「<span class="hl14">-14</span>」がいいの？</h2>
-    <p class="viz-lead">YouTubeやSpotifyには<b>“ボリューム係”</b>がいて、すべての曲を同じ音量にそろえています。だから——</p>
-    <div class="why14">
-      <div class="wrow">
-        <span class="wicon dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6.5 9H3v6h3.5L11 19z"/></svg></span>
-        <span class="wtxt"><b>小さい曲</b>は、小さいまま流れる<span class="wsub">…もったいない</span></span>
-      </div>
-      <div class="wrow warn2">
-        <span class="wicon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6.5 9H3v6h3.5L11 19z"/><path d="M15 9l6 6M21 9l-6 6"/></svg></span>
-        <span class="wtxt"><b>大きすぎる曲</b>は、下げられる<span class="wsub">…無理した音の傷だけ残る</span></span>
-      </div>
-      <div class="wrow best">
-        <span class="wicon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
-        <span class="wtxt"><b>「-14」の曲</b>だけ、そのまま流れる<span class="wsub">＝いちばんキレイに響く</span></span>
-        <span class="wwave" aria-hidden="true"></span>
-      </div>
-    </div>
-    <p class="viz-tail">このツールはワンタップで、その「-14」に合わせます。</p>
+    <h2 class="sr-only">なぜ「-14」がいいの？</h2>
+    <img class="art-img" src="tool2.webp" width="1200" height="900" loading="lazy" decoding="async"
+      alt="なぜ-14がいいの？ YouTubeやSpotifyには“ボリューム係”がいて、すべての曲を同じ音量にそろえています。小さい曲は小さいまま流れる（もったいない）。大きすぎる曲は下げられる（無理した音の傷だけ残る）。「-14」の曲だけそのまま流れる＝いちばんキレイに響く。このツールはワンタップで、その-14に合わせます。">
     <details class="fold">
       <summary>もっと詳しく（LUFSとは？）<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="a">
