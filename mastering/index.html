@@ -303,23 +303,22 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 .ht{font-size:14px;font-weight:800}
 .hd{font-size:11px;color:var(--mute);margin-top:3px}
 .harrow{align-self:center;color:var(--mute2);font-size:20px;font-weight:700;flex:none}
-/* LUFS：正規化のビジュアル */
+/* なぜ-14？：たとえ話カード */
 .viz-lead{text-align:center}
 .viz-lead b{color:var(--blue-hi)}
 .viz-tail{text-align:center;font-weight:700;color:var(--ink)}
-.lufs-viz{display:flex;gap:8px;margin:16px 0 12px}
-.lcol{flex:1;background:linear-gradient(180deg,rgba(16,26,46,.5),rgba(9,15,28,.6));border:1px solid var(--line);border-radius:14px;padding:14px 8px 11px;text-align:center}
-.lcol.good{border-color:rgba(60,120,240,.4)}
-.lbars{display:flex;align-items:flex-end;justify-content:center;gap:7px;height:86px}
-.lbar{width:22%;height:var(--h,50%);border-radius:5px 5px 2px 2px;background:#5a667e}
-.lbar.dim{opacity:.55}
-.lbar.blue{background:linear-gradient(180deg,#5aa6ff,#1f6cf1);box-shadow:0 0 12px -2px rgba(45,131,255,.6)}
-.lbar.warn{background:linear-gradient(180deg,#f5a55f,#e0641f)}
-.lbar.squash{border-radius:2px;position:relative}
-.lbar.squash::before{content:"";position:absolute;top:0;left:-3px;right:-3px;height:3px;background:#ffd9b8;border-radius:2px}
-.larw{color:var(--mute2);font-size:15px;font-weight:700;align-self:center}
-.ll{font-size:11px;color:var(--mute);margin-top:9px;line-height:1.5}
-.ll b{display:block;color:var(--ink2);font-size:11.5px}
+.why14{display:grid;gap:9px;margin:16px 0 12px}
+.wrow{display:flex;align-items:center;gap:13px;background:linear-gradient(180deg,rgba(16,26,46,.5),rgba(9,15,28,.6));border:1px solid var(--line);border-radius:14px;padding:13px 16px}
+.wrow.best{border-color:rgba(60,120,240,.45);box-shadow:0 0 20px -8px rgba(45,131,255,.4)}
+.wicon{flex:none;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(120,158,224,.08);border:1px solid var(--line)}
+.wicon svg{width:20px;height:20px}
+.wicon.dim{color:#7c879b}
+.wicon.warn{color:#f0975f;border-color:rgba(224,100,31,.35)}
+.wicon.blue{color:#fff;background:linear-gradient(180deg,#3a8bff,#1f6cf1);border-color:rgba(150,195,255,.5)}
+.wtxt{font-size:13.5px;color:var(--ink2);line-height:1.55}
+.wtxt b{color:var(--ink)}
+.wsub{display:block;font-size:12px;color:var(--mute)}
+.wrow.best .wsub{color:var(--blue-hi);font-weight:700}
 /* 折りたたみ（詳しく読む） */
 .fold{background:linear-gradient(180deg,rgba(16,26,46,.42),rgba(9,15,28,.55));border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:12px 0}
 .fold summary{list-style:none;cursor:pointer;padding:13px 18px;font-size:13.5px;font-weight:700;color:#aab6cc;display:flex;gap:10px;align-items:center;transition:background .2s ease}
@@ -637,23 +636,23 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     </ol></div>
     </details>
 
-    <h2>なぜ「-14」に合わせるの？</h2>
-    <p class="viz-lead">YouTubeもSpotifyも、再生時にどの曲も<b>同じ音量（約-14 LUFS）</b>に揃えます。だから——</p>
-    <div class="lufs-viz">
-      <div class="lcol">
-        <div class="lbars"><span class="lbar" style="--h:34%"></span><span class="larw">›</span><span class="lbar dim" style="--h:34%"></span></div>
-        <div class="ll">小さい曲<b>小さいまま…損</b></div>
+    <h2>なぜ「-14」がいいの？</h2>
+    <p class="viz-lead">YouTubeやSpotifyには<b>“ボリューム係”</b>がいて、すべての曲を同じ音量にそろえています。だから——</p>
+    <div class="why14">
+      <div class="wrow">
+        <span class="wicon dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6.5 9H3v6h3.5L11 19z"/></svg></span>
+        <span class="wtxt"><b>小さい曲</b>は、小さいまま流れる<span class="wsub">…もったいない</span></span>
       </div>
-      <div class="lcol good">
-        <div class="lbars"><span class="lbar blue" style="--h:62%"></span><span class="larw">›</span><span class="lbar blue" style="--h:62%"></span></div>
-        <div class="ll">-14の曲<b>そのまま届く◎</b></div>
+      <div class="wrow">
+        <span class="wicon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6.5 9H3v6h3.5L11 19z"/><path d="M15 9l6 6M21 9l-6 6"/></svg></span>
+        <span class="wtxt"><b>大きすぎる曲</b>は、下げられる<span class="wsub">…無理した音の傷だけ残る</span></span>
       </div>
-      <div class="lcol bad">
-        <div class="lbars"><span class="lbar warn squash" style="--h:92%"></span><span class="larw">›</span><span class="lbar warn squash" style="--h:62%"></span></div>
-        <div class="ll">大きすぎる曲<b>下げられて損</b></div>
+      <div class="wrow best">
+        <span class="wicon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <span class="wtxt"><b>「-14」の曲</b>だけ、そのまま流れる<span class="wsub">＝いちばんキレイに響く</span></span>
       </div>
     </div>
-    <p class="viz-tail">「-14に合わせる」が一番おトク。このツールはワンタップでそこへ合わせます。</p>
+    <p class="viz-tail">このツールはワンタップで、その「-14」に合わせます。</p>
     <details class="fold">
       <summary>もっと詳しく（LUFSとは？）<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="a">
