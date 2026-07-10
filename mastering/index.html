@@ -1928,10 +1928,23 @@ window.addEventListener('resize',()=>{plotCache=null;drawPlayerWave();});
 
 /* ═══════════ ダウンロード（WAV / MP3） ═══════════ */
 function baseName(){return S.fileName.replace(/\.[^.]+$/,'')||'track';}
+function inSandboxedFrame(){try{return window.self!==window.top;}catch(_){return true;}}
 function saveBlob(blob,name){
-  const url=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=url;a.download=name;document.body.appendChild(a);a.click();
-  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},4000);
+  const url=URL.createObjectURL(blob);
+  let clicked=false;
+  try{
+    const a=document.createElement('a');
+    a.href=url;a.download=name;a.rel='noopener';
+    document.body.appendChild(a);a.click();a.remove();clicked=true;
+  }catch(_){}
+  // サンドボックス（プレビュー用iframe等）ではダウンロードがブロックされることがあるため、
+  // その場合は別タブで開いて保存できるようにフォールバックする（本番の通常DLには影響しない）
+  if(inSandboxedFrame()){
+    let w=null;
+    try{w=window.open(url,'_blank','noopener');}catch(_){}
+    if(!w)alert('プレビュー画面ではダウンロードが制限されている場合があります。\n右上のメニューからツールを新しいタブ（または通常のブラウザ）で開くと保存できます。\n公開後のサイトでは普通に保存できます。');
+  }
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 $('dlWav').addEventListener('click',()=>{
   if(!S.processed)return;
