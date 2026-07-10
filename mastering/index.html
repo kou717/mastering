@@ -296,10 +296,6 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 .disclaimer b{color:var(--ink2)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .art-img{width:100%;height:auto;display:block;border-radius:18px;border:1px solid var(--line-soft);margin:6px 0 12px;box-shadow:0 14px 40px -22px rgba(0,0,0,.7)}
-.what14{text-align:center;background:linear-gradient(180deg,rgba(30,60,120,.28),rgba(16,26,46,.35));border:1px solid rgba(90,166,255,.3);border-radius:16px;padding:18px 18px 20px;margin:8px 0 18px}
-.what14-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--blue-hi);background:rgba(45,131,255,.14);border:1px solid rgba(90,166,255,.35);border-radius:999px;padding:4px 13px;margin-bottom:11px}
-.what14 p{font-size:16px;font-weight:800;color:var(--ink);line-height:1.6;margin:0}
-.n14{color:#fff;background:linear-gradient(180deg,#3a8bff,#1f6cf1);border-radius:9px;padding:1px 11px;margin:0 3px;font-weight:900;box-shadow:0 4px 14px -4px rgba(45,131,255,.7);display:inline-block}
 /* 使い方：3ステップ（ネオンポスター風） */
 .howto{position:relative;display:flex;align-items:stretch;gap:7px;margin:18px 0 12px}
 .howto::before{content:"";position:absolute;left:-4%;right:-4%;top:52%;height:44px;transform:translateY(-50%);
@@ -661,10 +657,9 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     </ol></div>
     </details>
 
-    <div class="what14">
-      <div class="what14-badge">このツールがすること</div>
-      <p>あなたの曲の音圧を、配信の“ちょうどいい大きさ”<b class="n14">-14</b>に自動でそろえます。</p>
-    </div>
+    <h2 class="sr-only">このツールがすること</h2>
+    <img class="art-img" src="tool4.webp" width="1200" height="514" loading="lazy" decoding="async"
+      alt="このツールがすること：あなたの曲の音量感を、配信で聴きやすい -14 LUFS に自動で整えます。">
     <h2 class="sr-only">なぜ「-14」がいいの？</h2>
     <img class="art-img" src="tool2.webp" width="1200" height="900" loading="lazy" decoding="async"
       alt="なぜ-14がいいの？ YouTubeやSpotifyには“ボリューム係”がいて、すべての曲を同じ音量にそろえています。小さい曲は小さいまま流れる（もったいない）。大きすぎる曲は下げられる（無理した音の傷だけ残る）。「-14」の曲だけそのまま流れる＝いちばんキレイに響く。このツールはワンタップで、その-14に合わせます。">
