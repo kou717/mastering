@@ -303,22 +303,32 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 .ht{font-size:14px;font-weight:800}
 .hd{font-size:11px;color:var(--mute);margin-top:3px}
 .harrow{align-self:center;color:var(--mute2);font-size:20px;font-weight:700;flex:none}
-/* なぜ-14？：たとえ話カード */
+/* なぜ-14？：たとえ話カード（ポスター風） */
+.why-h .hl14{background:linear-gradient(180deg,#9ccBff,#2f83ff);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:1.15em}
 .viz-lead{text-align:center}
 .viz-lead b{color:var(--blue-hi)}
-.viz-tail{text-align:center;font-weight:700;color:var(--ink)}
-.why14{display:grid;gap:9px;margin:16px 0 12px}
-.wrow{display:flex;align-items:center;gap:13px;background:linear-gradient(180deg,rgba(16,26,46,.5),rgba(9,15,28,.6));border:1px solid var(--line);border-radius:14px;padding:13px 16px}
-.wrow.best{border-color:rgba(60,120,240,.45);box-shadow:0 0 20px -8px rgba(45,131,255,.4)}
-.wicon{flex:none;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(120,158,224,.08);border:1px solid var(--line)}
-.wicon svg{width:20px;height:20px}
-.wicon.dim{color:#7c879b}
-.wicon.warn{color:#f0975f;border-color:rgba(224,100,31,.35)}
-.wicon.blue{color:#fff;background:linear-gradient(180deg,#3a8bff,#1f6cf1);border-color:rgba(150,195,255,.5)}
-.wtxt{font-size:13.5px;color:var(--ink2);line-height:1.55}
-.wtxt b{color:var(--ink)}
-.wsub{display:block;font-size:12px;color:var(--mute)}
-.wrow.best .wsub{color:var(--blue-hi);font-weight:700}
+.viz-tail{text-align:center;font-weight:800;color:var(--ink);font-size:15px}
+.why14{display:grid;gap:11px;margin:18px 0 14px}
+.wrow{position:relative;display:flex;align-items:center;gap:15px;background:linear-gradient(180deg,rgba(16,26,46,.55),rgba(9,15,28,.65));border:1px solid var(--line);border-radius:16px;padding:16px 18px;overflow:hidden}
+.wrow.warn2{border-color:rgba(224,100,31,.4);background:linear-gradient(180deg,rgba(46,26,12,.35),rgba(20,12,6,.35))}
+.wrow.best{border:1.5px solid rgba(90,166,255,.65);box-shadow:0 0 26px -8px rgba(45,131,255,.55),inset 0 0 30px -18px rgba(45,131,255,.5)}
+.wicon{flex:none;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(120,158,224,.08);border:1px solid var(--line)}
+.wicon::after{content:"";position:absolute;left:76px;top:14px;bottom:14px;width:1px;background:var(--line-soft)}
+.wicon svg{width:23px;height:23px}
+.wicon.dim{color:#8b96aa;border-color:rgba(120,158,224,.3)}
+.wicon.warn{color:#f0975f;border-color:rgba(224,100,31,.45)}
+.wicon.blue{color:#fff;background:linear-gradient(180deg,#3a8bff,#1f6cf1);border-color:rgba(150,195,255,.6);box-shadow:0 0 16px -2px rgba(45,131,255,.7)}
+.wtxt{font-size:14.5px;color:var(--ink2);line-height:1.6;position:relative;z-index:1}
+.wtxt b{color:var(--ink);font-weight:800}
+.wsub{display:block;font-size:12.5px;color:var(--mute)}
+.wrow.warn2 .wsub{color:#f0975f}
+.wrow.best .wsub{color:var(--blue-hi);font-weight:800}
+.wwave{position:absolute;right:8px;top:18%;bottom:18%;width:22%;pointer-events:none;opacity:.3;
+  background:repeating-linear-gradient(90deg,rgba(90,166,255,.55) 0 2px,transparent 2px 6px);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 60%),radial-gradient(60% 90% at 50% 50%,#000 30%,transparent 75%);
+  -webkit-mask-composite:source-in;
+  mask-image:linear-gradient(90deg,transparent,#000 60%);
+}
 /* 折りたたみ（詳しく読む） */
 .fold{background:linear-gradient(180deg,rgba(16,26,46,.42),rgba(9,15,28,.55));border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:12px 0}
 .fold summary{list-style:none;cursor:pointer;padding:13px 18px;font-size:13.5px;font-weight:700;color:#aab6cc;display:flex;gap:10px;align-items:center;transition:background .2s ease}
@@ -636,20 +646,21 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
     </ol></div>
     </details>
 
-    <h2>なぜ「-14」がいいの？</h2>
+    <h2 class="why-h">なぜ「<span class="hl14">-14</span>」がいいの？</h2>
     <p class="viz-lead">YouTubeやSpotifyには<b>“ボリューム係”</b>がいて、すべての曲を同じ音量にそろえています。だから——</p>
     <div class="why14">
       <div class="wrow">
         <span class="wicon dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6.5 9H3v6h3.5L11 19z"/></svg></span>
         <span class="wtxt"><b>小さい曲</b>は、小さいまま流れる<span class="wsub">…もったいない</span></span>
       </div>
-      <div class="wrow">
+      <div class="wrow warn2">
         <span class="wicon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6.5 9H3v6h3.5L11 19z"/><path d="M15 9l6 6M21 9l-6 6"/></svg></span>
         <span class="wtxt"><b>大きすぎる曲</b>は、下げられる<span class="wsub">…無理した音の傷だけ残る</span></span>
       </div>
       <div class="wrow best">
         <span class="wicon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
         <span class="wtxt"><b>「-14」の曲</b>だけ、そのまま流れる<span class="wsub">＝いちばんキレイに響く</span></span>
+        <span class="wwave" aria-hidden="true"></span>
       </div>
     </div>
     <p class="viz-tail">このツールはワンタップで、その「-14」に合わせます。</p>
