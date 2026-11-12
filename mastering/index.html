@@ -1908,14 +1908,14 @@ function drawWaveform(g,ge){
   // 軽量描画：縦線は「線（丸端・アンチエイリアス）」ではなく長方形の塗りで描く。
   // グローは shadowBlur（スマホで非常に重い）を使わず、少し大きい薄い長方形を下に1枚敷いて表現する
   const my=midY*dpr;
+  // 1本のパスに600個の重なった長方形を入れるとブラウザの塗り処理が極端に重くなる（PCで80ms超）ため、
+  // 1本ずつ fillRect で描く（単純な長方形の高速経路が使われる）
   function bars(ratio,w,grow){
-    g.beginPath();
     for(let i=0;i<n;i++){
       const amp=Math.min(waveDisp[i]*AMP*ratio,cap)*dpr+grow;
       const x=(ge.plotL+i*bw)*dpr;
-      g.rect(x-w/2,my-amp,w,amp*2);
+      g.fillRect(x-w/2,my-amp,w,amp*2);
     }
-    g.fill();
   }
   function pass(ratio,color,glow,wid){
     const w=wid*dpr;
