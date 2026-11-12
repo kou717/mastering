@@ -20,22 +20,28 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
 body{
-  background:
-    radial-gradient(120% 46% at 50% -6%, rgba(28,66,140,.4) 0%, rgba(12,28,64,.14) 32%, transparent 60%),
-    radial-gradient(80% 30% at 88% 4%, rgba(96,72,190,.16) 0%, transparent 48%),
-    var(--bg);
-  background-attachment:fixed;
+  background:var(--bg);
   color:var(--ink);
   font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic Medium","Yu Gothic","Noto Sans JP",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh;
 }
+/* 背景の光は固定レイヤーに描く（background-attachment:fixed はスクロールのたびに全面再描画になりスマホで重い） */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(120% 46% at 50% -6%, rgba(28,66,140,.4) 0%, rgba(12,28,64,.14) 32%, transparent 60%),
+    radial-gradient(80% 30% at 88% 4%, rgba(96,72,190,.16) 0%, transparent 48%);
+  transform:translateZ(0)}
 .wrap{max-width:760px;margin:0 auto;padding:0 20px}
 a{color:var(--ink2)}
 button{font-family:inherit}
 svg{display:block}
 
 /* ── ① header ── */
-.site-header{position:sticky;top:0;z-index:50;background:rgba(6,9,18,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
+.site-header{position:sticky;top:0;z-index:50;background:rgba(6,9,18,.94);border-bottom:1px solid var(--line-soft)}
+/* すりガラス効果はPC（マウス操作）のみ。スマホではスクロールのたびに背景をぼかし直すため重い */
+@media (hover:hover) and (pointer:fine){
+  .site-header{background:rgba(6,9,18,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+}
 .site-header .inner{max-width:960px;margin:0 auto;padding:13px 20px;display:flex;align-items:center;gap:12px}
 .logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--ink);font-weight:800;font-size:17px;letter-spacing:.06em}
 .logo svg{width:22px;height:22px;color:var(--blue)}
@@ -300,7 +306,8 @@ h1 .thin{display:block;font-size:.62em;font-weight:700;color:var(--blue-hi);marg
 .howto{position:relative;display:flex;align-items:stretch;gap:7px;margin:18px 0 12px}
 .howto::before{content:"";position:absolute;left:-4%;right:-4%;top:52%;height:44px;transform:translateY(-50%);
   background:linear-gradient(90deg,rgba(60,170,255,.55),rgba(167,139,250,.5),rgba(255,140,80,.55));
-  filter:blur(26px);opacity:.28;pointer-events:none}
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 50%,transparent);mask-image:linear-gradient(180deg,transparent,#000 50%,transparent);
+  opacity:.22;pointer-events:none}
 .hstep{position:relative;z-index:1;flex:1;border-radius:18px;padding:16px 8px 15px;text-align:center;
   background:linear-gradient(180deg,rgba(14,22,42,.78),rgba(8,12,24,.85));border:1.5px solid}
 .hstep.c1{border-color:rgba(80,180,255,.5);box-shadow:0 0 26px -10px rgba(60,170,255,.55)}
@@ -757,7 +764,8 @@ const S={
   processing:false,analyzing:false,
 };
 let actx=null;
-function audioCtx(){if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();return actx}
+// latencyHint:'playback' … 試聴用なので低遅延より安定を優先（大きめのバッファでスマホの音飛び・負荷を抑える）
+function audioCtx(){if(!actx){const AC=window.AudioContext||window.webkitAudioContext;try{actx=new AC({latencyHint:'playback'});}catch(_){actx=new AC();}}return actx}
 
 /* ═══════════ 画面遷移（クロスフェード + History API） ═══════════ */
 const SCREENS={upload:$('screen-upload'),analyze:$('screen-analyze'),adjust:$('screen-adjust')};
@@ -1897,14 +1905,22 @@ function drawMeter(g,ge){
 function drawWaveform(g,ge){
   if(!waveDisp)return;
   const dpr=ge.dpr,n=waveDisp.length,bw=ge.plotW/n,AMP=ge.plotH*0.42,cap=ge.plotH*0.49,midY=ge.midY;
-  function pass(ratio,color,glow,wid){
-    g.strokeStyle=color;g.lineWidth=wid*dpr;g.lineCap='round';g.shadowColor=glow;g.shadowBlur=glow?6*dpr:0;g.beginPath();
+  // 軽量描画：縦線は「線（丸端・アンチエイリアス）」ではなく長方形の塗りで描く。
+  // グローは shadowBlur（スマホで非常に重い）を使わず、少し大きい薄い長方形を下に1枚敷いて表現する
+  const my=midY*dpr;
+  function bars(ratio,w,grow){
+    g.beginPath();
     for(let i=0;i<n;i++){
-      const amp=Math.min(waveDisp[i]*AMP*ratio,cap)*dpr;
+      const amp=Math.min(waveDisp[i]*AMP*ratio,cap)*dpr+grow;
       const x=(ge.plotL+i*bw)*dpr;
-      g.moveTo(x,midY*dpr-amp);g.lineTo(x,midY*dpr+amp);
+      g.rect(x-w/2,my-amp,w,amp*2);
     }
-    g.stroke();g.shadowBlur=0;
+    g.fill();
+  }
+  function pass(ratio,color,glow,wid){
+    const w=wid*dpr;
+    if(glow){g.fillStyle=glow;g.globalAlpha=0.45;bars(ratio,w+3*dpr,1.5*dpr);g.globalAlpha=1;}
+    g.fillStyle=color;bars(ratio,w,0);
   }
   pass(1.0,'rgba(46,120,230,.85)','rgba(40,110,235,.5)',Math.max(1,bw*0.72));
   pass(0.44,'rgba(158,218,255,.95)','rgba(120,200,255,.45)',Math.max(1,bw*0.66));
@@ -1950,9 +1966,9 @@ function drawPlayerWave(){
   if(cv.width!==dw||cv.height!==dh){cv.width=dw;cv.height=dh;plotCache=null;}
   if(!plotCache||!plotGeo||plotGeo.cssW!==cssW||plotGeo.cssH!==cssH)rebuildPlotCache(cssW,cssH,dpr);
   const g=cv.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,cv.width,cv.height);
-  if(waveDirty||!baseLayer)rebuildBaseLayer();
-  g.drawImage(baseLayer,0,0);
   const ge=plotGeo,dur=duration()||1,p=playheadPos();
+  if(waveDirty&&waveRaf){g.drawImage(plotCache,0,0);drawWaveform(g,ge);}   // 波形が動いている間は直接描く（画像化は止まってから）
+  else{if(waveDirty||!baseLayer)rebuildBaseLayer();g.drawImage(baseLayer,0,0);}
   const px=(ge.plotL+(p/dur)*ge.plotW)*dpr;
   g.fillStyle='rgba(4,7,14,.5)';g.fillRect(px,(ge.plotT-2)*dpr,(ge.plotR)*dpr-px,(ge.plotH+4)*dpr);
   drawSpectrum(g,ge);
