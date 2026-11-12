@@ -1932,7 +1932,42 @@ window.addEventListener('resize',()=>{plotCache=null;drawPlayerWave();});
 /* ═══════════ ダウンロード（WAV / MP3） ═══════════ */
 function baseName(){return S.fileName.replace(/\.[^.]+$/,'')||'track';}
 function inSandboxedFrame(){try{return window.self!==window.top;}catch(_){return true;}}
-function saveBlob(blob,name){
+// Claudeのプレビュー（Artifactビューア）内でのみ使える保存機能。本番サイトでは常にnull
+const dlCapPromise=(window.claude&&typeof window.claude.use==='function')
+  ?window.claude.use('downloads').catch(()=>null):Promise.resolve(null);
+// 単一ファイルをzip（無圧縮）に包む：プレビューの保存はWAV/MP3を受け付けずzipは可のため
+const CRC_TABLE=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRC_TABLE[(c^u8[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+async function zipSingle(name,blob){
+  const data=new Uint8Array(await blob.arrayBuffer());
+  const nm=new TextEncoder().encode(name),crc=crc32(data),sz=data.length;
+  const d=new Date(),tm=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1),dt=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  const lh=new DataView(new ArrayBuffer(30));
+  [[0,0x04034b50,4],[4,20,2],[6,0x0800,2],[8,0,2],[10,tm,2],[12,dt,2],[14,crc,4],[18,sz,4],[22,sz,4],[26,nm.length,2],[28,0,2]]
+    .forEach(([o,v,n])=>n===4?lh.setUint32(o,v,true):lh.setUint16(o,v,true));
+  const ch=new DataView(new ArrayBuffer(46));
+  [[0,0x02014b50,4],[4,20,2],[6,20,2],[8,0x0800,2],[10,0,2],[12,tm,2],[14,dt,2],[16,crc,4],[20,sz,4],[24,sz,4],[28,nm.length,2],[30,0,2],[32,0,2],[34,0,2],[36,0,2],[38,0,4],[42,0,4]]
+    .forEach(([o,v,n])=>n===4?ch.setUint32(o,v,true):ch.setUint16(o,v,true));
+  const cdOff=30+nm.length+sz,cdSize=46+nm.length;
+  const end=new DataView(new ArrayBuffer(22));
+  [[0,0x06054b50,4],[4,0,2],[6,0,2],[8,1,2],[10,1,2],[12,cdSize,4],[16,cdOff,4],[20,0,2]]
+    .forEach(([o,v,n])=>n===4?end.setUint32(o,v,true):end.setUint16(o,v,true));
+  return new Blob([lh,nm,data,ch,nm,end],{type:'application/zip'});
+}
+async function saveBlob(blob,name){
+  const dl=await dlCapPromise;
+  if(dl){
+    // プレビュー内: 確認ダイアログ付きの保存（音声はzipに包む）
+    try{
+      await dl.save({filename:name+'.zip',data:await zipSingle(name,blob)});
+    }catch(e){
+      const c=e&&e.code;
+      if(c==='declined')return;
+      if(c==='rate_limited'){alert('保存の確認がすでに表示されています。少し待ってからもう一度押してください。');return;}
+      alert('このプレビュー画面では保存できませんでした。\n公開後のサイトではWAV/MP3を直接保存できます。');
+    }
+    return;
+  }
   const url=URL.createObjectURL(blob);
   let clicked=false;
   try{
@@ -1949,9 +1984,9 @@ function saveBlob(blob,name){
   }
   setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
-$('dlWav').addEventListener('click',()=>{
+$('dlWav').addEventListener('click',async()=>{
   if(!S.processed)return;
-  saveBlob(encodeWav(S.processed.buffer),baseName()+'_mastered.wav');
+  await saveBlob(encodeWav(S.processed.buffer),baseName()+'_mastered.wav');
 });
 function encodeWav(buf){
   const nch=buf.numberOfChannels,fs=buf.sampleRate,len=buf.length;
@@ -1990,7 +2025,7 @@ $('dlMp3').addEventListener('click',async()=>{
   try{
     await loadLame();
     const blob=await encodeMp3(S.processed.buffer,192);
-    saveBlob(blob,baseName()+'_mastered.mp3');
+    await saveBlob(blob,baseName()+'_mastered.mp3');
   }catch(e){
     alert('MP3エンコーダーの読み込みに失敗しました。オフライン環境では、劣化のないWAV保存をご利用ください。');
   }finally{
