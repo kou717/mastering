@@ -1765,6 +1765,8 @@ $('pvWave').addEventListener('click',e=>{
 let plotCache=null,plotGeo=null,meterLevel=0,meterBuf=null;
 let specBuf=null,specSmooth=null,specAlpha=0;   // リアルタイムスペクトラム（再生中のみ・波形の背面）
 let waveDisp=null,waveTarget=null,waveRaf=0,waveN=0;   // 表示中/目標の振幅エンベロープ（処理前⇔処理後をトゥイーン）
+// 描画の軽量化：目盛り＋波形（グロー付き）とメーターを事前に画像化し、再生中は貼り付けるだけにする
+let baseLayer=null,waveDirty=true,meterOn=null,meterOff=null;
 
 function meterColor(f){
   if(f>0.955) return '#ff4b4b';
@@ -1794,12 +1796,12 @@ function computeWaveInto(arr){
 }
 function setWaveArrays(){
   waveN=(S.origPeaks&&S.origPeaks.length)||600;
-  waveDisp=new Float32Array(waveN);waveTarget=new Float32Array(waveN);
+  waveDisp=new Float32Array(waveN);waveTarget=new Float32Array(waveN);waveDirty=true;
 }
 function updateWaveTarget(animate){
   if(!waveDisp||waveDisp.length!==((S.origPeaks&&S.origPeaks.length)||600))setWaveArrays();
   computeWaveInto(waveTarget);
-  if(animate===false||reducedMotion()){waveDisp.set(waveTarget);drawPlayerWave();return;}
+  if(animate===false||reducedMotion()){waveDisp.set(waveTarget);waveDirty=true;drawPlayerWave();return;}
   if(!waveRaf)startWaveTween();
 }
 function startWaveTween(){
@@ -1809,7 +1811,8 @@ function startWaveTween(){
       const d=waveTarget[i]-waveDisp[i];
       if(Math.abs(d)>0.0008){waveDisp[i]+=d*0.2;moved=true;}else waveDisp[i]=waveTarget[i];
     }
-    drawPlayerWave();
+    waveDirty=true;
+    if(!player.playing)drawPlayerWave();   // 再生中は再生ループ側が描くので二重描画しない
     waveRaf=moved?requestAnimationFrame(step):0;
   };
   waveRaf=requestAnimationFrame(step);
@@ -1838,7 +1841,35 @@ function rebuildPlotCache(cssW,cssH,dpr){
   g.strokeStyle='rgba(90,120,170,.16)';g.lineWidth=1;g.setLineDash([4,5]);
   for(let s=major;s<dur-0.01;s+=major){const x=Math.round(plotL+(s/dur)*plotW)+.5;g.beginPath();g.moveTo(x,plotT);g.lineTo(x,plotB);g.stroke();}
   g.setLineDash([]);
-  plotCache=c;
+  plotCache=c;waveDirty=true;meterOn=meterOff=null;
+}
+/* 目盛り（plotCache）＋波形を1枚の画像にまとめる：波形が変わった時だけ作り直す */
+function rebuildBaseLayer(){
+  const ge=plotGeo;
+  if(!baseLayer)baseLayer=document.createElement('canvas');
+  if(baseLayer.width!==plotCache.width||baseLayer.height!==plotCache.height){baseLayer.width=plotCache.width;baseLayer.height=plotCache.height;}
+  const g=baseLayer.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,baseLayer.width,baseLayer.height);
+  g.drawImage(plotCache,0,0);
+  drawWaveform(g,ge);
+  waveDirty=false;
+}
+/* LEDメーターの「点灯」「消灯」2枚を事前に描いておき、毎フレームは高さ分を切り出して貼るだけ */
+function buildMeterSprites(ge){
+  const dpr=ge.dpr,pad=Math.ceil(8*dpr);
+  const mw=ge.metW*dpr,top=ge.plotT*dpr,bot=ge.plotB*dpr,H=bot-top;
+  const segN=34,gap=2.2*dpr,segH=(H-(segN-1)*gap)/segN;
+  const mk=lit=>{
+    const c=document.createElement('canvas');c.width=Math.ceil(mw+pad*2);c.height=Math.ceil(H+pad*2);
+    const g=c.getContext('2d');
+    for(let i=0;i<segN;i++){
+      const f=i/(segN-1),y=pad+H-i*(segH+gap)-segH,col=meterColor(f);
+      g.globalAlpha=lit?1:0.2;g.fillStyle=col;
+      if(lit&&f>0.9){g.shadowColor=col;g.shadowBlur=6*dpr;}else g.shadowBlur=0;
+      roundRectDev(g,pad,y,mw,segH,2*dpr);g.fill();
+    }
+    return c;
+  };
+  meterOn=mk(true);meterOff=mk(false);meterOn._pad=pad;meterOn._segN=segN;meterOn._segH=segH;meterOn._gap=gap;
 }
 function readMeterLevel(){
   const n=live.nodes;
@@ -1852,15 +1883,16 @@ function readMeterLevel(){
 }
 function drawMeter(g,ge){
   const lvl=readMeterLevel(),dpr=ge.dpr;
-  const mx=ge.metX*dpr,mw=ge.metW*dpr,top=ge.plotT*dpr,bot=ge.plotB*dpr,H=bot-top;
-  const segN=34,gap=2.2*dpr,segH=(H-(segN-1)*gap)/segN;
-  for(let i=0;i<segN;i++){
-    const f=i/(segN-1),y=bot-i*(segH+gap)-segH,col=meterColor(f),lit=f<=lvl+0.001;
-    g.globalAlpha=lit?1:0.2;g.fillStyle=col;
-    if(lit&&f>0.9){g.shadowColor=col;g.shadowBlur=6*dpr;}else g.shadowBlur=0;
-    roundRectDev(g,mx,y,mw,segH,2*dpr);g.fill();
+  if(!meterOn)buildMeterSprites(ge);
+  const pad=meterOn._pad,segN=meterOn._segN,segH=meterOn._segH,gap=meterOn._gap;
+  const x0=ge.metX*dpr-pad,y0=ge.plotT*dpr-pad,W=meterOn.width,Hc=meterOn.height;
+  g.drawImage(meterOff,x0,y0);
+  const litN=Math.floor(lvl*(segN-1)+0.001)+1;           // 点灯するセグメント数（f<=lvl の個数）
+  if(litN>0&&lvl>0.0005){
+    // 一番上の点灯セグメントの上端から半ギャップ上で切る（その上の消灯セグメントは含めない）
+    const cut=Math.max(0,Math.floor(pad+(ge.plotB-ge.plotT)*dpr-litN*(segH+gap)+gap*0.5));
+    g.drawImage(meterOn,0,cut,W,Hc-cut,x0,y0+cut,W,Hc-cut);
   }
-  g.globalAlpha=1;g.shadowBlur=0;
 }
 function drawWaveform(g,ge){
   if(!waveDisp)return;
@@ -1912,15 +1944,15 @@ function drawSpectrum(g,ge){
 }
 function drawPlayerWave(){
   const cv=$('pvWave');if(!cv)return;
-  const dpr=Math.min(window.devicePixelRatio||1,2.5),cssW=cv.clientWidth,cssH=cv.clientHeight;
+  const dpr=Math.min(window.devicePixelRatio||1,2),cssW=cv.clientWidth,cssH=cv.clientHeight;
   if(!cssW||!cssH)return;
   const dw=Math.round(cssW*dpr),dh=Math.round(cssH*dpr);
   if(cv.width!==dw||cv.height!==dh){cv.width=dw;cv.height=dh;plotCache=null;}
   if(!plotCache||!plotGeo||plotGeo.cssW!==cssW||plotGeo.cssH!==cssH)rebuildPlotCache(cssW,cssH,dpr);
   const g=cv.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,cv.width,cv.height);
-  g.drawImage(plotCache,0,0);
+  if(waveDirty||!baseLayer)rebuildBaseLayer();
+  g.drawImage(baseLayer,0,0);
   const ge=plotGeo,dur=duration()||1,p=playheadPos();
-  drawWaveform(g,ge);
   const px=(ge.plotL+(p/dur)*ge.plotW)*dpr;
   g.fillStyle='rgba(4,7,14,.5)';g.fillRect(px,(ge.plotT-2)*dpr,(ge.plotR)*dpr-px,(ge.plotH+4)*dpr);
   drawSpectrum(g,ge);
